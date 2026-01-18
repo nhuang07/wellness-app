@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import {
   Alert,
   Modal,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -107,8 +108,16 @@ export default function GroupInfoButton({
         animationType="fade"
         onRequestClose={() => setVisible(false)}
       >
-        <View style={styles.overlay}>
-          <View style={styles.popup}>
+        {/* Clickable dim background */}
+        <Pressable
+          style={styles.overlay}
+          onPress={() => setVisible(false)}
+        >
+          {/* Popup (prevents closing when tapped) */}
+          <Pressable
+            style={styles.popup}
+            onPress={(e) => e.stopPropagation()}
+          >
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setVisible(false)}
@@ -132,7 +141,7 @@ export default function GroupInfoButton({
             </View>
 
             {/* Stats */}
-            <View className="section">
+            <View style={styles.section}>
               <Text style={styles.label}>Stats</Text>
               <Text style={styles.stat}>
                 • Group tasks completed:{" "}
@@ -152,8 +161,8 @@ export default function GroupInfoButton({
             >
               <Text style={styles.leaveButtonText}>Leave Group</Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );
