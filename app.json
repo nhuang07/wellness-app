@@ -37,3 +37,16 @@
     }
   }
 }
+
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to verify task completion."
+        }
+      ]
+    ]
+  }
+}

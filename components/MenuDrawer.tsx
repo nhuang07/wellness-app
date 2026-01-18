@@ -1,7 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
+import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface MenuDrawerProps {
   groups: string[];
@@ -18,97 +16,155 @@ export default function MenuDrawer({
   onCreateGroup,
   onJoinGroup,
 }: MenuDrawerProps) {
-  const colorScheme = useColorScheme();
-  const themeColors = Colors[colorScheme ?? 'light'];
-
   return (
-    <View style={[styles.drawer, { backgroundColor: themeColors.background }]}>
-      <Text style={[styles.title, { color: themeColors.text }]}>Your Groups</Text>
+    <ImageBackground
+      source={require('../assets/images/auth-bg-1.png')}
+      style={styles.drawer}
+      resizeMode="cover"
+    >
+      <View style={styles.content}>
+        {/* Close Button */}
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={onClose}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.closeButtonText}>✕</Text>
+        </TouchableOpacity>
 
-      {groups.map((group, index) => (
-        <Text key={index} style={[styles.group, { color: themeColors.text }]}>
-          {group}
-        </Text>
-      ))}
+        <Text style={styles.title}>Your Groups</Text>
 
-      {/* Create / Join Group Buttons */}
-      <TouchableOpacity
-        style={[styles.groupButton, { backgroundColor: themeColors.primaryButton }]}
-        onPress={onCreateGroup}
-      >
-        <Text style={styles.groupButtonText}>Create Group</Text>
-      </TouchableOpacity>
+        {/* Groups List */}
+        <View style={styles.groupsList}>
+          {groups.map((group, index) => (
+            <View key={index} style={styles.groupItem}>
+              <Text style={styles.groupText}>{group}</Text>
+            </View>
+          ))}
+        </View>
 
-      <TouchableOpacity
-        style={[styles.groupButton, { backgroundColor: themeColors.primaryButton }]}
-        onPress={onJoinGroup}
-      >
-        <Text style={styles.groupButtonText}>Join Group</Text>
-      </TouchableOpacity>
+        {/* Create / Join Group Buttons */}
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity
+            style={styles.groupButton}
+            onPress={onCreateGroup}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.groupButtonText}>Create Group</Text>
+          </TouchableOpacity>
 
-      {/* Profile Button */}
-      <TouchableOpacity
-        style={[styles.profileButton, { backgroundColor: themeColors.primaryButton }]}
-        onPress={onProfile}
-      >
-        <Text style={styles.profileButtonText}>Profile</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.groupButton}
+            onPress={onJoinGroup}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.groupButtonText}>Join Group</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Close Menu */}
-      <TouchableOpacity
-        style={[styles.closeButton, { backgroundColor: themeColors.closeButtonBackground }]}
-        onPress={onClose}
-      >
-        <Text style={{ color: 'white' }}>Close Menu</Text>
-      </TouchableOpacity>
-    </View>
+        {/* Profile Button */}
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={onProfile}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.profileButtonText}>Profile</Text>
+        </TouchableOpacity>
+      </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   drawer: {
     flex: 1,
-    padding: 20,
-    width: '70%', // keep menu left-side
-    position: 'relative',
+    width: '80%',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
+
+  content: {
+    flex: 1,
+    padding: 24,
+    paddingTop: 60,
   },
-  group: {
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  groupButton: {
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  groupButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  profileButton: {
-    position: 'absolute',
-    bottom: 40,
-    left: 20,
-    right: 20,
-    padding: 10,
-    borderRadius: 8,
-  },
-  profileButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
+
   closeButton: {
     position: 'absolute',
-    top: 40,
-    right: 20,
-    padding: 8,
-    borderRadius: 6,
+    top: 60,
+    right: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  closeButtonText: {
+    fontSize: 20,
+    color: '#131313',
+    fontWeight: 'bold',
+  },
+
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#131313',
+    marginBottom: 24,
+  },
+
+  groupsList: {
+    flex: 1,
+    gap: 12,
+  },
+
+  groupItem: {
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
+  },
+
+  groupText: {
+    fontSize: 16,
+    color: '#131313',
+    fontWeight: '600',
+  },
+
+  actionsContainer: {
+    gap: 12,
+    marginBottom: 16,
+  },
+
+  groupButton: {
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(120, 120, 128, 0.16)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+
+  groupButtonText: {
+    color: '#131313',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+
+  profileButton: {
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(83, 212, 216, 0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+
+  profileButtonText: {
+    color: '#131313',
+    fontWeight: '700',
+    fontSize: 16,
   },
 });
