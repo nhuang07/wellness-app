@@ -86,15 +86,29 @@ export const getMyGroup = async (userId: string) => {
     .from("group_members")
     .select("group_id, groups(*)")
     .eq("user_id", userId)
+    .order("joined_at", { ascending: false })
+    .limit(1)
     .single();
+
   if (error) return null;
   return data.groups;
+};
+
+export const getMyGroups = async (userId: string) => {
+  const { data, error } = await supabase
+    .from("group_members")
+    .select("group_id, joined_at, groups(*)")
+    .eq("user_id", userId)
+    .order("joined_at", { ascending: false });
+
+  if (error) return [];
+  return data;
 };
 
 export const getGroupMembers = async (groupId: string) => {
   const { data, error } = await supabase
     .from("group_members")
-    .select("user_id, profiles(username)")
+    .select("user_id, profiles(username, avatar_url)")
     .eq("group_id", groupId);
   if (error) throw error;
   return data;

@@ -16,6 +16,7 @@ export default function JoinGroupScreen() {
 
   const handleJoin = async () => {
     const trimmed = code.trim().toLowerCase();
+    console.log("Trying to join with code:", trimmed);
 
     if (trimmed.length !== 5) {
       Alert.alert("Invalid code", "Code must be exactly 5 letters.");
@@ -34,6 +35,7 @@ export default function JoinGroupScreen() {
       await joinGroup(trimmed, user.id);
       router.replace("/(tabs)");
     } catch (error: any) {
+      console.log("Join error:", error);
       Alert.alert("Error", error.message || "Invalid invite code");
     }
   };
