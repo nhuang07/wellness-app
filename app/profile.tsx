@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  ImageBackground,
   ScrollView,
   StyleSheet,
   Text,
@@ -99,7 +100,7 @@ export default function ProfileScreen() {
       setSaving(true);
       const url = await uploadAvatar(userId, uri);
       setAvatarUrl(url);
-      setAvatarKey((prev) => prev + 1); // <-- add this
+      setAvatarKey((prev) => prev + 1);
     } catch (error: any) {
       console.log("Avatar error:", error);
     } finally {
@@ -114,137 +115,159 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6366F1" />
-      </View>
+      <ImageBackground
+        source={require("../assets/images/auth-bg-1.png")}
+        style={{ flex: 1 }}
+        resizeMode="cover"
+      >
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#131313" />
+        </View>
+      </ImageBackground>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.avatarContainer}
-          onPress={handleAvatarPress}
-        >
-          <Image
-            key={avatarKey}
-            source={{
-              uri: avatarUrl
-                ? `${avatarUrl}?v=${avatarKey}`
-                : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
-            }}
-            style={styles.avatar}
-          />
-          <View style={styles.editBadge}>
-            <Text style={styles.editBadgeText}>📷</Text>
+    <ImageBackground
+      source={require("../assets/images/auth-bg-1.png")}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.avatarContainer}
+            onPress={handleAvatarPress}
+          >
+            <Image
+              key={avatarKey}
+              source={{
+                uri: avatarUrl
+                  ? `${avatarUrl}?v=${avatarKey}`
+                  : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+              }}
+              style={styles.avatar}
+            />
+            <View style={styles.editBadge}>
+              <Text style={styles.editBadgeText}>📷</Text>
+            </View>
+          </TouchableOpacity>
+
+          {isEditing ? (
+            <TextInput
+              style={styles.usernameInput}
+              value={username}
+              onChangeText={setUsername}
+              autoFocus
+              placeholderTextColor="rgba(19,19,19,0.5)"
+            />
+          ) : (
+            <Text style={styles.username}>{username}</Text>
+          )}
+        </View>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{stats.tasksThisWeek}</Text>
+            <Text style={styles.statLabel}>This Week</Text>
           </View>
-        </TouchableOpacity>
-
-        {isEditing ? (
-          <TextInput
-            style={styles.usernameInput}
-            value={username}
-            onChangeText={setUsername}
-            autoFocus
-          />
-        ) : (
-          <Text style={styles.username}>{username}</Text>
-        )}
-      </View>
-
-      <View style={styles.statsContainer}>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>{stats.tasksThisWeek}</Text>
-          <Text style={styles.statLabel}>This Week</Text>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{stats.tasksAllTime}</Text>
+            <Text style={styles.statLabel}>All Time</Text>
+          </View>
         </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>{stats.tasksAllTime}</Text>
-          <Text style={styles.statLabel}>All Time</Text>
-        </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Bio</Text>
-        {isEditing ? (
-          <TextInput
-            style={styles.bioInput}
-            value={bio}
-            onChangeText={setBio}
-            multiline
-            numberOfLines={3}
-            placeholder="Tell us about yourself..."
-            placeholderTextColor="#999"
-          />
-        ) : (
-          <Text style={styles.bioText}>
-            {bio || "No bio yet. Tap edit to add one!"}
-          </Text>
-        )}
-      </View>
-
-      {team && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>My Team</Text>
-          <View style={styles.teamCard}>
-            <Text style={styles.teamName}>🏠 {team.name}</Text>
-            <Text style={styles.teamCode}>Invite code: {team.invite_code}</Text>
+          <Text style={styles.sectionTitle}>Bio</Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.bioInput}
+              value={bio}
+              onChangeText={setBio}
+              multiline
+              numberOfLines={4}
+              placeholder="Tell us about yourself..."
+              placeholderTextColor="rgba(19,19,19,0.5)"
+            />
+          ) : (
+            <View style={styles.bioContainer}>
+              <Text style={styles.bioText}>
+                {bio || "No bio yet. Tap edit to add one!"}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {team && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>My Team</Text>
+            <View style={styles.teamCard}>
+              <Text style={styles.teamName}>🏠 {team.name}</Text>
+              <Text style={styles.teamCode}>Invite code: {team.invite_code}</Text>
+            </View>
           </View>
-        </View>
-      )}
+        )}
 
-      {isEditing ? (
-        <View style={styles.buttonRow}>
+        {isEditing ? (
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={() => setIsEditing(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.saveButton]}
+              onPress={handleSave}
+              disabled={saving}
+              activeOpacity={0.8}
+            >
+              {saving ? (
+                <ActivityIndicator color="#131313" />
+              ) : (
+                <Text style={styles.buttonText}>Save</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : (
           <TouchableOpacity
-            style={[styles.button, styles.cancelButton]}
-            onPress={() => setIsEditing(false)}
+            style={styles.button}
+            onPress={() => setIsEditing(true)}
+            activeOpacity={0.8}
           >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.buttonText}>Edit Profile</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.saveButton]}
-            onPress={handleSave}
-            disabled={saving}
-          >
-            <Text style={styles.buttonText}>
-              {saving ? "Saving..." : "Save"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => setIsEditing(true)}
+        )}
+
+        <TouchableOpacity 
+          style={styles.logoutButton} 
+          onPress={handleLogout}
+          activeOpacity={0.8}
         >
-          <Text style={styles.buttonText}>Edit Profile</Text>
+          <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
-      )}
-
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Log Out</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "transparent",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "transparent",
   },
   header: {
     alignItems: "center",
-    paddingTop: 60,
+    paddingTop: 80,
     paddingBottom: 24,
-    backgroundColor: "#6366F1",
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    backgroundColor: "transparent",
   },
   avatarContainer: {
     position: "relative",
@@ -254,117 +277,121 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    borderWidth: 4,
-    borderColor: "#fff",
+    borderWidth: 3,
+    borderColor: "rgba(255, 255, 255, 0.6)",
   },
   editBadge: {
     position: "absolute",
     bottom: 0,
     right: 0,
-    backgroundColor: "#fff",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 16,
     width: 32,
     height: 32,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
   editBadgeText: {
     fontSize: 14,
   },
   username: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "700",
-    color: "#fff",
+    color: "#131313",
   },
   usernameInput: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "700",
-    color: "#fff",
+    color: "#131313",
     borderBottomWidth: 2,
-    borderBottomColor: "#fff",
+    borderBottomColor: "rgba(19,19,19,0.3)",
     paddingBottom: 4,
     minWidth: 150,
     textAlign: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    paddingHorizontal: 16,
+    borderRadius: 8,
   },
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingVertical: 24,
+    paddingVertical: 20,
     paddingHorizontal: 16,
-    marginTop: -20,
-    marginHorizontal: 16,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    marginHorizontal: 24,
+    marginTop: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
   statBox: {
     alignItems: "center",
   },
   statNumber: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "700",
-    color: "#1E293B",
+    color: "#131313",
   },
   statLabel: {
-    fontSize: 12,
-    color: "#64748B",
+    fontSize: 14,
+    color: "#131313",
     marginTop: 4,
+    opacity: 0.7,
   },
   section: {
     paddingHorizontal: 24,
     marginTop: 24,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
-    color: "#64748B",
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    color: "#131313",
+    marginBottom: 12,
+    opacity: 0.8,
+  },
+  bioContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
   bioText: {
     fontSize: 16,
-    color: "#1E293B",
+    color: "#131313",
     lineHeight: 24,
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 12,
   },
   bioInput: {
     fontSize: 16,
-    color: "#1E293B",
+    color: "#131313",
     lineHeight: 24,
-    backgroundColor: "#fff",
+    backgroundColor: "rgba(255, 255, 255, 0.55)",
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 2,
-    borderColor: "#6366F1",
-    minHeight: 100,
+    borderColor: "rgba(255, 255, 255, 0.4)",
+    minHeight: 120,
     textAlignVertical: "top",
   },
   teamCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "rgba(83, 212, 216, 0.35)",
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
   },
   teamName: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1E293B",
+    color: "#131313",
     marginBottom: 4,
   },
   teamCode: {
     fontSize: 14,
-    color: "#64748B",
+    color: "#131313",
+    opacity: 0.8,
   },
   buttonRow: {
     flexDirection: "row",
@@ -374,46 +401,54 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    backgroundColor: "#6366F1",
+    height: 52,
+    backgroundColor: "rgba(120, 120, 128, 0.16)",
     marginHorizontal: 24,
     marginTop: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 100,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
   saveButton: {
-    backgroundColor: "#10B981",
+    backgroundColor: "rgba(120, 120, 128, 0.16)",
     marginHorizontal: 0,
     marginTop: 0,
   },
   cancelButton: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
     marginHorizontal: 0,
     marginTop: 0,
   },
   buttonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontSize: 16,
+    color: "#131313",
+    fontSize: 18,
     fontWeight: "600",
   },
   cancelButtonText: {
-    color: "#64748B",
-    textAlign: "center",
-    fontSize: 16,
+    color: "#131313",
+    fontSize: 18,
     fontWeight: "600",
   },
   logoutButton: {
     marginHorizontal: 24,
     marginTop: 16,
     marginBottom: 40,
-    paddingVertical: 16,
+    height: 52,
+    borderRadius: 100,
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
   },
   logoutText: {
-    color: "#EF4444",
-    textAlign: "center",
-    fontSize: 16,
+    color: "#131313",
+    fontSize: 18,
     fontWeight: "600",
+    opacity: 0.8,
   },
 });

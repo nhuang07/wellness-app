@@ -1,3 +1,5 @@
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -8,25 +10,20 @@ interface TodoItemProps {
 }
 
 export default function TodoItem({ text, done, onToggle }: TodoItemProps) {
+  const colorScheme = useColorScheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
+
   return (
-    <TouchableOpacity 
-      style={[styles.item, done && styles.itemDone]} 
-      onPress={onToggle}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={styles.item} onPress={onToggle}>
       <View style={styles.row}>
         <View
           style={[
             styles.checkbox,
-            done && styles.checkboxDone,
+            { borderColor: themeColors.primaryButton },
+            done && { backgroundColor: themeColors.primaryButton },
           ]}
-        >
-          {done && <Text style={styles.checkmark}>✓</Text>}
-        </View>
-        <Text style={[
-          styles.text, 
-          done && styles.textDone
-        ]}>
+        />
+        <Text style={[styles.text, done && { textDecorationLine: 'line-through', color: themeColors.textDone }]}>
           {text}
         </Text>
       </View>
@@ -36,55 +33,22 @@ export default function TodoItem({ text, done, onToggle }: TodoItemProps) {
 
 const styles = StyleSheet.create({
   item: {
-    padding: 16,
-    marginBottom: 8,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-
-  itemDone: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    opacity: 0.8,
-  },
-
   row: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   checkbox: {
-    width: 24,
-    height: 24,
-    borderWidth: 2,
-    borderRadius: 12,
-    borderColor: '#131313',
+    width: 20,
+    height: 20,
+    borderWidth: 1,
+    borderRadius: 4,
     marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
   },
-
-  checkboxDone: {
-    backgroundColor: 'rgba(83, 212, 216, 0.8)',
-    borderColor: '#131313',
-  },
-
-  checkmark: {
-    color: '#131313',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-
   text: {
     fontSize: 16,
-    color: '#131313',
-    flex: 1,
-  },
-
-  textDone: {
-    textDecorationLine: 'line-through',
-    opacity: 0.6,
   },
 });
