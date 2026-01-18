@@ -64,6 +64,7 @@ export default function GroupHomeScreen() {
     "mine",
   );
   const [initialized, setInitialized] = useState(false);
+  const [tasksLoaded, setTasksLoaded] = useState(false);
 
   // Profile modal
   const [selectedMember, setSelectedMember] = useState<any>(null);
@@ -123,45 +124,57 @@ export default function GroupHomeScreen() {
   // Initialize decay based on group creation time
   useEffect(() => {
     if (!group?.created_at) return;
-    if (loading) return;
+    if (!tasksLoaded) return;
     if (initialized) return;
 
     const secondsElapsed =
       (Date.now() - new Date(group.created_at).getTime()) / 1000;
     const initialDecay = Math.floor(secondsElapsed / 5) * 10;
-    const initialBoost = allTasks.length * 20 + 100; // Start with 100 bonus
+    const initialBoost = allTasks.length * 20;
 
+    // Always start with boost 100 ahead of decay for 100% mood
     let cappedDecay = initialDecay;
-    let cappedBoost = initialBoost;
+    let cappedBoost = initialDecay + 100;
 
-    if (initialDecay > initialBoost + 100) {
-      cappedDecay = initialBoost + 100;
+    // But if actual boost from tasks is higher, use that
+    if (initialBoost > cappedBoost) {
+      cappedBoost = initialBoost;
+      // And cap decay relative to it
+      if (cappedDecay > cappedBoost + 100) {
+        cappedDecay = cappedBoost + 100;
+      }
     }
 
-    if (initialBoost > initialDecay + 100) {
-      cappedBoost = initialDecay + 100;
-    }
+    console.log(
+      "Final - decay:",
+      cappedDecay,
+      "boost:",
+      cappedBoost,
+      "mood:",
+      Math.round(50 + (cappedBoost - cappedDecay) / 2),
+    );
 
     setTrackedDecay(cappedDecay);
     setTrackedBoost(cappedBoost);
     setInitialized(true);
-  }, [group?.created_at, allTasks.length, loading, initialized]);
+  }, [group?.created_at, tasksLoaded, initialized, allTasks.length]);
 
-  // Update boost when tasks change (after initial load)
   useEffect(() => {
     if (!initialized) return;
 
-    const newBoost = allTasks.length * 20;
+    const newBoost = allTasks.length * 20 + 100;
     const cappedBoost = Math.min(newBoost, trackedDecay + 100);
     setTrackedBoost(cappedBoost);
   }, [allTasks.length, initialized, trackedDecay]);
 
   // Calculate mood from tracked values
   useEffect(() => {
+    if (!initialized) return;
+
     const difference = trackedBoost - trackedDecay;
     const mood = Math.round(50 + difference / 2);
     setPetMood(Math.max(0, Math.min(100, mood)));
-  }, [trackedBoost, trackedDecay]);
+  }, [trackedBoost, trackedDecay, initialized]);
 
   /*
   const startPetMoodDecay = () => {
@@ -266,6 +279,7 @@ export default function GroupHomeScreen() {
 
     const groupTasks = await getCompletedGroupTasks(currentGroupId);
     setAllTasks(groupTasks);
+    setTasksLoaded(true);
 
     // Load uncompleted tasks for everyone
     const uncompleted = await getUncompletedGroupTasks(currentGroupId);
@@ -569,7 +583,19 @@ export default function GroupHomeScreen() {
           {/* Mascot */}
           <View style={styles.mascotContainer}>
             <Image source={getCreatureImage()} style={styles.mascot} />
-            <Text style={styles.moodText}>Mood: {petMood}%</Text>
+
+            {/* Mood Bar */}
+            <View style={styles.moodBarContainer}>
+              <View style={styles.moodBarBackground}>
+                <View style={[styles.moodBarFill, { width: `${petMood}%` }]} />
+                <View style={[styles.moodIndicator, { left: `${petMood}%` }]}>
+                  <Image
+                    source={getCreatureImage()}
+                    style={styles.moodIndicatorImage}
+                  />
+                </View>
+              </View>
+            </View>
           </View>
 
           {/* Group Members */}
@@ -1189,5 +1215,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
     marginTop: 6,
+  },
+  moodBarContainer: {
+    width: "80%",
+    marginTop: 16,
+    alignItems: "center",
+  },
+  moodBarBackground: {
+    width: "100%",
+    height: 12,
+    backgroundColor: "rgba(0, 0, 0, 0.1)",
+    borderRadius: 6,
+    overflow: "visible",
+    position: "relative",
+  },
+  moodBarFill: {
+    height: "100%",
+    backgroundColor: "#6366F1",
+    borderRadius: 6,
+  },
+  moodIndicator: {
+    position: "absolute",
+    top: -14,
+    marginLeft: -20,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  moodIndicatorImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: "#fff",
   },
 });
