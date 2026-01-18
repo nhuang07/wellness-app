@@ -7,7 +7,6 @@ import { generateTasksForUser } from "@/lib/gemini";
 import {
   canNudgeUser,
   getCompletedGroupTasks,
-  getUncompletedGroupTasks,
   getGroupMembers,
   getMyGroup,
   getMyGroups,
@@ -73,7 +72,9 @@ export default function GroupHomeScreen() {
   const [allGroups, setAllGroups] = useState<any[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [nudgeLoading, setNudgeLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"mine" | "pending" | "all">("mine");
+  const [activeTab, setActiveTab] = useState<"mine" | "pending" | "all">(
+    "mine",
+  );
   const [uncompletedTasks, setUncompletedTasks] = useState<any[]>([]);
 
   // Profile modal
@@ -91,7 +92,7 @@ export default function GroupHomeScreen() {
     const interval = setInterval(() => {
       const completedCount = allTasks.filter((t) => t.completed).length;
       setPetMood(calculateMood(group, completedCount));
-    }, 1000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [allTasks, group]);
@@ -143,27 +144,6 @@ export default function GroupHomeScreen() {
   };
   */
 
-  const calculateMood = (group: any, tasksCompletedToday: number) => {
-    if (!group?.created_at) return 100;
-
-    /*
-    const hoursElapsed =
-      (Date.now() - new Date(group.created_at).getTime()) / (1000 * 60 * 60);
-
-    // Lose 5 mood per hour, gain 10 per task completed
-    const decay = Math.floor(hoursElapsed) * 5;
-    const boost = tasksCompletedToday * 10;
-    */
-
-    const secondsElapsed =
-      (Date.now() - new Date(group.created_at).getTime()) / 1000;
-
-    // Lose 10 mood per 15 seconds, gain 20 per task completed
-    const decay = Math.floor(secondsElapsed / 15) * 10;
-    const boost = tasksCompletedToday * 20;
-
-    return Math.max(0, Math.min(100, 100 - decay + boost));
-  };
   const loadAllGroups = async (uid?: string) => {
     const currentUserId = uid || userId;
     if (!currentUserId) return;
@@ -250,20 +230,16 @@ export default function GroupHomeScreen() {
   };
 
   const loadTasks = async (uid?: string, gid?: string) => {
-  const currentUserId = uid || userId;
-  const currentGroupId = gid || group?.id;
-  if (!currentUserId || !currentGroupId) return;
+    const currentUserId = uid || userId;
+    const currentGroupId = gid || group?.id;
+    if (!currentUserId || !currentGroupId) return;
 
-  const myTasks = await getMyTasks(currentUserId, currentGroupId);
-  setTasks(myTasks);
+    const myTasks = await getMyTasks(currentUserId, currentGroupId);
+    setTasks(myTasks);
 
-  const groupTasks = await getCompletedGroupTasks(currentGroupId);
-  setAllTasks(groupTasks);
-
-  // Load uncompleted tasks for everyone
-  const uncompleted = await getUncompletedGroupTasks(currentGroupId);
-  setUncompletedTasks(uncompleted);
-};
+    const groupTasks = await getCompletedGroupTasks(currentGroupId);
+    setAllTasks(groupTasks); // Does this include ALL tasks or just completed?
+  };
 
   const loadMembers = async (gid?: string) => {
     const currentGroupId = gid || group?.id;
@@ -641,7 +617,7 @@ export default function GroupHomeScreen() {
             </TouchableOpacity>
           </View>
 
-           {/* Tab Switcher */}
+          {/* Tab Switcher */}
           {tasks.length > 0 && (
             <View style={styles.tabContainer}>
               <TouchableOpacity
@@ -658,7 +634,10 @@ export default function GroupHomeScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.tab, activeTab === "pending" && styles.activeTab]}
+                style={[
+                  styles.tab,
+                  activeTab === "pending" && styles.activeTab,
+                ]}
                 onPress={() => setActiveTab("pending")}
               >
                 <Text
@@ -688,57 +667,61 @@ export default function GroupHomeScreen() {
 
           {/* Task List */}
           <View style={styles.todoContainer}>
-            {activeTab === "mine" && tasks.map((item) => (
-              <View key={item.id}>
-                <TaskCard
-                  task={{
-                    id: item.id,
-                    description: item.description,
-                    completed: item.completed,
-                    photo_url: item.photo_url,
-                    completed_at: item.completed_at,
-                  }}
-                  onComplete={handleTaskComplete}
-                />
-              </View>
-            ))}
-
-            {activeTab === "pending" && uncompletedTasks.map((item) => (
-              <View key={item.id}>
-                <Text style={styles.taskOwner}>
-                  {item.profiles?.username || "Unknown"}
-                </Text>
-                <View style={styles.pendingTaskCard}>
-                  <Text style={styles.pendingTaskText}>
-                    {item.description}
-                  </Text>
-                  <Text style={styles.pendingTaskDate}>
-                    Created {new Date(item.created_at).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </Text>
+            {activeTab === "mine" &&
+              tasks.map((item) => (
+                <View key={item.id}>
+                  <TaskCard
+                    task={{
+                      id: item.id,
+                      description: item.description,
+                      completed: item.completed,
+                      photo_url: item.photo_url,
+                      completed_at: item.completed_at,
+                    }}
+                    onComplete={handleTaskComplete}
+                  />
                 </View>
-              </View>
-            ))}
+              ))}
 
-            {activeTab === "all" && allTasks.map((item) => (
-              <View key={item.id}>
-                <Text style={styles.taskOwner}>
-                  {item.profiles?.username || "Unknown"}
-                </Text>
-                <TaskCard
-                  task={{
-                    id: item.id,
-                    description: item.description,
-                    completed: item.completed,
-                    photo_url: item.photo_url,
-                    completed_at: item.completed_at,
-                  }}
-                  onComplete={handleTaskComplete}
-                />
-              </View>
-            ))}
+            {activeTab === "pending" &&
+              uncompletedTasks.map((item) => (
+                <View key={item.id}>
+                  <Text style={styles.taskOwner}>
+                    {item.profiles?.username || "Unknown"}
+                  </Text>
+                  <View style={styles.pendingTaskCard}>
+                    <Text style={styles.pendingTaskText}>
+                      {item.description}
+                    </Text>
+                    <Text style={styles.pendingTaskDate}>
+                      Created{" "}
+                      {new Date(item.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+
+            {activeTab === "all" &&
+              allTasks.map((item) => (
+                <View key={item.id}>
+                  <Text style={styles.taskOwner}>
+                    {item.profiles?.username || "Unknown"}
+                  </Text>
+                  <TaskCard
+                    task={{
+                      id: item.id,
+                      description: item.description,
+                      completed: item.completed,
+                      photo_url: item.photo_url,
+                      completed_at: item.completed_at,
+                    }}
+                    onComplete={handleTaskComplete}
+                  />
+                </View>
+              ))}
 
             {activeTab === "mine" && tasks.length === 0 && (
               <Text style={styles.emptyText}>
@@ -753,9 +736,7 @@ export default function GroupHomeScreen() {
             )}
 
             {activeTab === "all" && allTasks.length === 0 && (
-              <Text style={styles.emptyText}>
-                No completed tasks yet.
-              </Text>
+              <Text style={styles.emptyText}>No completed tasks yet.</Text>
             )}
           </View>
         </ScrollView>
@@ -1159,14 +1140,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   pendingTaskCard: {
-  backgroundColor: "rgba(255, 255, 255, 0.8)",
-  borderRadius: 16,
-  padding: 16,
-  marginBottom: 12,
-  borderWidth: 2,
-  borderColor: "#6365f160",
-  borderLeftWidth: 4,
-  borderLeftColor: "#6366F1",
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: "#6365f160",
+    borderLeftWidth: 4,
+    borderLeftColor: "#6366F1",
   },
   pendingTaskText: {
     fontSize: 16,
@@ -1174,9 +1155,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   pendingTaskDate: {
-  fontSize: 12,
-  color: "#666",
-  marginTop: 6,
+    fontSize: 12,
+    color: "#666",
+    marginTop: 6,
   },
-  
 });
