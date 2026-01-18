@@ -32,7 +32,7 @@ export default function AuthScreen() {
       } else {
         await signUp(email, password, username);
       }
-      router.replace("/create-group");
+      router.replace("/create-group" as any);
     } catch (error: any) {
       Alert.alert("Error", error.message);
     } finally {
