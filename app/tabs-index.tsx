@@ -264,7 +264,7 @@ export default function GroupHomeScreen() {
         {/* Profile Modal */}
         <Modal
           visible={profileModalVisible}
-          animationType="slide"
+          animationType="fade"
           transparent
           onRequestClose={() => setProfileModalVisible(false)}
         >
@@ -317,31 +317,46 @@ export default function GroupHomeScreen() {
         {/* Task Selection Modal */}
         <Modal
           visible={showTaskSelection}
-          animationType="slide"
+          animationType="fade"
           transparent
           onRequestClose={() => setShowTaskSelection(false)}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.taskSelectionModal}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => {
+                  setShowTaskSelection(false);
+                  setGeneratedTasks([]);
+                  setSelectedTasks([]);
+                }}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+
               <Text style={styles.modalTitle}>Select Your Tasks</Text>
               <Text style={styles.modalSubtitle}>Tap to select/deselect</Text>
 
-              {generatedTasks.map((task, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.selectableTask,
-                    selectedTasks.includes(task) &&
-                      styles.selectableTaskSelected,
-                  ]}
-                  onPress={() => toggleTaskSelection(task)}
-                >
-                  <View style={styles.checkbox}>
-                    {selectedTasks.includes(task) && <Text>✓</Text>}
-                  </View>
-                  <Text style={styles.selectableTaskText}>{task}</Text>
-                </TouchableOpacity>
-              ))}
+              <ScrollView style={{ maxHeight: 300 }}>
+                {generatedTasks.map((task, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.selectableTask,
+                      selectedTasks.includes(task) &&
+                        styles.selectableTaskSelected,
+                    ]}
+                    onPress={() => toggleTaskSelection(task)}
+                  >
+                    <View style={styles.checkbox}>
+                      {selectedTasks.includes(task) && (
+                        <Text style={{ color: "#6366F1" }}>✓</Text>
+                      )}
+                    </View>
+                    <Text style={styles.selectableTaskText}>{task}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
 
               <View style={styles.modalButtons}>
                 <TouchableOpacity
@@ -413,35 +428,34 @@ export default function GroupHomeScreen() {
             </ScrollView>
           </View>
 
-          {/* Task Generation */}
-          {tasks.length === 0 && (
-            <View style={styles.promptContainer}>
-              <Text style={styles.promptLabel}>
-                What's on your mind? What do you want to improve?
-              </Text>
-              <TextInput
-                value={prompt}
-                onChangeText={setPrompt}
-                placeholder="I've been stressed about..."
-                placeholderTextColor="rgba(19, 19, 19, 0.5)"
-                style={styles.promptInput}
-                multiline
-              />
-              <TouchableOpacity
-                onPress={handleGenerateTasks}
-                style={styles.generateButton}
-                disabled={generating}
-              >
-                {generating ? (
-                  <ActivityIndicator color="#131313" />
-                ) : (
-                  <Text style={styles.generateButtonText}>
-                    Generate My Tasks
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          )}
+          {/* AI Task Generation - Always visible */}
+          <View style={styles.aiGenerateContainer}>
+            <TouchableOpacity
+              onPress={() => {
+                if (prompt.trim()) {
+                  handleGenerateTasks();
+                }
+              }}
+              style={styles.aiGenerateButton}
+              disabled={generating}
+            >
+              {generating ? (
+                <ActivityIndicator color="#6366F1" />
+              ) : (
+                <>
+                  <Text style={styles.aiGenerateIcon}>✨</Text>
+                  <TextInput
+                    value={prompt}
+                    onChangeText={setPrompt}
+                    placeholder="Get AI to generate your tasks..."
+                    placeholderTextColor="rgba(19, 19, 19, 0.5)"
+                    style={styles.aiGenerateInput}
+                  />
+                  <Text style={styles.aiGenerateArrow}>→</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
 
           {/* Tab Switcher */}
           {tasks.length > 0 && (
@@ -471,30 +485,6 @@ export default function GroupHomeScreen() {
                 >
                   All Tasks ({allTasks.length})
                 </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Generate More Tasks Button */}
-          {tasks.length > 0 && (
-            <View style={styles.generateMoreContainer}>
-              <TextInput
-                value={prompt}
-                onChangeText={setPrompt}
-                placeholder="What else is on your mind?"
-                placeholderTextColor="rgba(19, 19, 19, 0.5)"
-                style={styles.generateMoreInput}
-              />
-              <TouchableOpacity
-                onPress={handleGenerateTasks}
-                style={styles.generateMoreButton}
-                disabled={generating}
-              >
-                {generating ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text style={styles.generateMoreButtonText}>+ Add Tasks</Text>
-                )}
               </TouchableOpacity>
             </View>
           )}
@@ -532,6 +522,7 @@ export default function GroupHomeScreen() {
                     description: item.description,
                     completed: item.completed,
                     photo_url: item.photo_url,
+                    completed_at: item.completed_at,
                   }}
                   onComplete={handleTaskComplete}
                 />
@@ -712,12 +703,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
   modalContent: {
     backgroundColor: "#fff",
     borderRadius: 24,
@@ -795,11 +780,19 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
   taskSelectionModal: {
     backgroundColor: "#fff",
     borderRadius: 24,
     padding: 24,
-    width: "90%",
+    paddingTop: 48,
+    width: "100%",
     maxHeight: "80%",
   },
   modalTitle: {
@@ -898,6 +891,34 @@ const styles = StyleSheet.create({
   addCustomButtonText: {
     color: "#fff",
     fontSize: 24,
+    fontWeight: "600",
+  },
+  aiGenerateContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  aiGenerateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(99, 102, 241, 0.15)",
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 2,
+    borderColor: "rgba(99, 102, 241, 0.3)",
+  },
+  aiGenerateIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  aiGenerateInput: {
+    flex: 1,
+    color: "#131313",
+    fontSize: 16,
+  },
+  aiGenerateArrow: {
+    fontSize: 20,
+    color: "#6366F1",
     fontWeight: "600",
   },
 });
