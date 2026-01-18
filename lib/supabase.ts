@@ -447,3 +447,19 @@ export const updateGroupMood = async (groupId: string, newMood: number) => {
     .eq("id", groupId);
   if (error) throw error;
 };
+
+export const getUncompletedGroupTasks = async (groupId: string) => {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(
+      `
+      *,
+      profiles:user_id (username, avatar_url)
+    `,
+    )
+    .eq("group_id", groupId)
+    .eq("completed", false)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
+};

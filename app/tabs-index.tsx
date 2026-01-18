@@ -7,6 +7,7 @@ import { generateTasksForUser } from "@/lib/gemini";
 import {
   canNudgeUser,
   getCompletedGroupTasks,
+  getUncompletedGroupTasks,
   getGroupMembers,
   getMyGroup,
   getMyGroups,
@@ -72,9 +73,8 @@ export default function GroupHomeScreen() {
   const [allGroups, setAllGroups] = useState<any[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [nudgeLoading, setNudgeLoading] = useState(false);
-
-  // Tab for my tasks vs all tasks
-  const [activeTab, setActiveTab] = useState<"mine" | "all">("mine");
+  const [activeTab, setActiveTab] = useState<"mine" | "pending" | "all">("mine");
+  const [uncompletedTasks, setUncompletedTasks] = useState<any[]>([]);
 
   // Profile modal
   const [selectedMember, setSelectedMember] = useState<any>(null);
@@ -250,16 +250,20 @@ export default function GroupHomeScreen() {
   };
 
   const loadTasks = async (uid?: string, gid?: string) => {
-    const currentUserId = uid || userId;
-    const currentGroupId = gid || group?.id;
-    if (!currentUserId || !currentGroupId) return;
+  const currentUserId = uid || userId;
+  const currentGroupId = gid || group?.id;
+  if (!currentUserId || !currentGroupId) return;
 
-    const myTasks = await getMyTasks(currentUserId, currentGroupId);
-    setTasks(myTasks);
+  const myTasks = await getMyTasks(currentUserId, currentGroupId);
+  setTasks(myTasks);
 
-    const groupTasks = await getCompletedGroupTasks(currentGroupId);
-    setAllTasks(groupTasks);
-  };
+  const groupTasks = await getCompletedGroupTasks(currentGroupId);
+  setAllTasks(groupTasks);
+
+  // Load uncompleted tasks for everyone
+  const uncompleted = await getUncompletedGroupTasks(currentGroupId);
+  setUncompletedTasks(uncompleted);
+};
 
   const loadMembers = async (gid?: string) => {
     const currentGroupId = gid || group?.id;
@@ -637,7 +641,7 @@ export default function GroupHomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Tab Switcher */}
+           {/* Tab Switcher */}
           {tasks.length > 0 && (
             <View style={styles.tabContainer}>
               <TouchableOpacity
@@ -654,6 +658,19 @@ export default function GroupHomeScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                style={[styles.tab, activeTab === "pending" && styles.activeTab]}
+                onPress={() => setActiveTab("pending")}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === "pending" && styles.activeTabText,
+                  ]}
+                >
+                  To Do ({uncompletedTasks.length})
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={[styles.tab, activeTab === "all" && styles.activeTab]}
                 onPress={() => setActiveTab("all")}
               >
@@ -663,7 +680,7 @@ export default function GroupHomeScreen() {
                     activeTab === "all" && styles.activeTabText,
                   ]}
                 >
-                  All Tasks ({allTasks.length})
+                  Completed ({allTasks.length})
                 </Text>
               </TouchableOpacity>
             </View>
@@ -671,13 +688,8 @@ export default function GroupHomeScreen() {
 
           {/* Task List */}
           <View style={styles.todoContainer}>
-            {(activeTab === "mine" ? tasks : allTasks).map((item) => (
+            {activeTab === "mine" && tasks.map((item) => (
               <View key={item.id}>
-                {activeTab === "all" && (
-                  <Text style={styles.taskOwner}>
-                    {item.profiles?.username || "Unknown"}
-                  </Text>
-                )}
                 <TaskCard
                   task={{
                     id: item.id,
@@ -690,11 +702,59 @@ export default function GroupHomeScreen() {
                 />
               </View>
             ))}
-            {(activeTab === "mine" ? tasks : allTasks).length === 0 && (
+
+            {activeTab === "pending" && uncompletedTasks.map((item) => (
+              <View key={item.id}>
+                <Text style={styles.taskOwner}>
+                  {item.profiles?.username || "Unknown"}
+                </Text>
+                <View style={styles.pendingTaskCard}>
+                  <Text style={styles.pendingTaskText}>
+                    {item.description}
+                  </Text>
+                  <Text style={styles.pendingTaskDate}>
+                    Created {new Date(item.created_at).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </Text>
+                </View>
+              </View>
+            ))}
+
+            {activeTab === "all" && allTasks.map((item) => (
+              <View key={item.id}>
+                <Text style={styles.taskOwner}>
+                  {item.profiles?.username || "Unknown"}
+                </Text>
+                <TaskCard
+                  task={{
+                    id: item.id,
+                    description: item.description,
+                    completed: item.completed,
+                    photo_url: item.photo_url,
+                    completed_at: item.completed_at,
+                  }}
+                  onComplete={handleTaskComplete}
+                />
+              </View>
+            ))}
+
+            {activeTab === "mine" && tasks.length === 0 && (
               <Text style={styles.emptyText}>
-                {activeTab === "mine"
-                  ? "No tasks yet. Tell us what's on your mind!"
-                  : "No team tasks yet."}
+                No tasks yet. Tell us what's on your mind!
+              </Text>
+            )}
+
+            {activeTab === "pending" && uncompletedTasks.length === 0 && (
+              <Text style={styles.emptyText}>
+                🎉 Everyone's done! Great work team!
+              </Text>
+            )}
+
+            {activeTab === "all" && allTasks.length === 0 && (
+              <Text style={styles.emptyText}>
+                No completed tasks yet.
               </Text>
             )}
           </View>
@@ -1098,4 +1158,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
   },
+  pendingTaskCard: {
+  backgroundColor: "rgba(255, 255, 255, 0.8)",
+  borderRadius: 16,
+  padding: 16,
+  marginBottom: 12,
+  borderWidth: 2,
+  borderColor: "rgba(255, 152, 0, 0.3)",
+  borderLeftWidth: 4,
+  borderLeftColor: "#FF9800",
+  },
+  pendingTaskText: {
+    fontSize: 16,
+    color: "#131313",
+    fontWeight: "500",
+  },
+  pendingTaskDate: {
+  fontSize: 12,
+  color: "#666",
+  marginTop: 6,
+  },
+  
 });
