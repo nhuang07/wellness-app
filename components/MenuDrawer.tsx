@@ -37,9 +37,53 @@ export default function MenuDrawer({
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 250,
-      useNativeDriver: true, // ok because we're animating transform
+      useNativeDriver: true, // animating transform
     }).start();
   }, [slideAnim]);
+
+  const animateOutThen = (cb?: () => void) => {
+    Animated.timing(slideAnim, {
+      toValue: -TARGET_WIDTH,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        cb?.();
+      }
+    });
+  };
+
+  const handleCloseOnly = () => {
+    animateOutThen(onClose);
+  };
+
+  const handleSelectGroup = (groupId: string) => {
+    animateOutThen(() => {
+      onSelectGroup?.(groupId);
+      onClose();
+    });
+  };
+
+  const handleCreateGroup = () => {
+    animateOutThen(() => {
+      onCreateGroup();
+      onClose();
+    });
+  };
+
+  const handleJoinGroup = () => {
+    animateOutThen(() => {
+      onJoinGroup();
+      onClose();
+    });
+  };
+
+  const handleProfile = () => {
+    animateOutThen(() => {
+      onProfile();
+      onClose();
+    });
+  };
 
   return (
     <View style={styles.overlay}>
@@ -61,7 +105,7 @@ export default function MenuDrawer({
             {/* Close Button */}
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={onClose}
+              onPress={handleCloseOnly}
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
@@ -80,7 +124,7 @@ export default function MenuDrawer({
                     key={index}
                     style={styles.groupItem}
                     activeOpacity={0.8}
-                    onPress={() => onSelectGroup && onSelectGroup(group)}
+                    onPress={() => handleSelectGroup(group)}
                   >
                     <Text style={styles.groupText}>{group}</Text>
                   </TouchableOpacity>
@@ -92,7 +136,7 @@ export default function MenuDrawer({
             <View style={styles.actionsContainer}>
               <TouchableOpacity
                 style={styles.groupButton}
-                onPress={onCreateGroup}
+                onPress={handleCreateGroup}
                 activeOpacity={0.8}
               >
                 <Text style={styles.groupButtonText}>Create Group</Text>
@@ -100,7 +144,7 @@ export default function MenuDrawer({
 
               <TouchableOpacity
                 style={styles.groupButton}
-                onPress={onJoinGroup}
+                onPress={handleJoinGroup}
                 activeOpacity={0.8}
               >
                 <Text style={styles.groupButtonText}>Join Group</Text>
@@ -110,7 +154,7 @@ export default function MenuDrawer({
             {/* Profile Button */}
             <TouchableOpacity
               style={styles.profileButton}
-              onPress={onProfile}
+              onPress={handleProfile}
               activeOpacity={0.8}
             >
               <Text style={styles.profileButtonText}>Profile</Text>
@@ -120,7 +164,7 @@ export default function MenuDrawer({
       </Animated.View>
 
       {/* Dark overlay that closes drawer on tap */}
-      <Pressable style={styles.backdrop} onPress={onClose} />
+      <Pressable style={styles.backdrop} onPress={handleCloseOnly} />
     </View>
   );
 }
@@ -141,7 +185,7 @@ const styles = StyleSheet.create({
   drawerContainer: {
     width: TARGET_WIDTH,
     height: '100%',
-    backgroundColor: '#ffffff',
+    //backgroundColor: '#ffffff',
     overflow: 'hidden',
   },
 
@@ -160,7 +204,6 @@ const styles = StyleSheet.create({
   // Clickable dark area
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
   },
 
   closeButton: {
