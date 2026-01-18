@@ -22,7 +22,7 @@ function generateCode() {
 
 export default function CreateGroupScreen() {
   const [code, setCode] = useState('');
-  const [groupName, setGroupName] = useState('');   // ← added
+  const [groupName, setGroupName] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -35,8 +35,7 @@ export default function CreateGroupScreen() {
   };
 
   const goToGroup = () => {
-    // you can later use groupName when you store the group in a backend
-    router.push(`/group/${code}`);
+  router.push('/(tabs)');
   };
 
   return (
@@ -55,17 +54,13 @@ export default function CreateGroupScreen() {
         </TouchableOpacity>
 
         <View style={styles.content}>
-          <Text style={styles.title}>Create Group</Text>
-          <Text style={styles.subtitle}>
-            Share this code so others can join:
-          </Text>
 
-          {/* Group name textbox under "Create Group" */}
-          <Text style={styles.label}>Group name</Text>
+          {/* Group name field */}
+          <Text style={styles.label}>Create Group</Text>
           <TextInput
             style={styles.input}
             placeholder="Enter group name..."
-            placeholderTextColor="rgba(19,19,19,0.5)"
+            placeholderTextColor="rgba(19,19,19,0.45)"
             value={groupName}
             onChangeText={setGroupName}
           />
@@ -89,6 +84,7 @@ export default function CreateGroupScreen() {
           >
             <Text style={styles.secondaryButtonText}>Go To Group Page</Text>
           </TouchableOpacity>
+
         </View>
       </View>
     </ImageBackground>
@@ -124,39 +120,32 @@ const styles = StyleSheet.create({
     gap: 16,
   },
 
-  title: {
-    fontSize: 32,
+  /* UPDATED label — bigger + centered */
+  label: {
+    fontSize: 35,
     fontWeight: '700',
     color: '#131313',
     textAlign: 'center',
-    marginBottom: 8,
-  },
-
-  subtitle: {
-    color: '#131313',
-    fontSize: 16,
-    textAlign: 'center',
-    opacity: 0.8,
-    marginBottom: 8,
-  },
-
-  label: {
-    fontSize: 14,
-    color: '#131313',
-    marginBottom: 4,
-    marginLeft: 4,
-  },
-
-  input: {
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(19,19,19,0.2)',
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(255,255,255,0.8)',
     marginBottom: 12,
   },
 
+  /* UPDATED input — more rounded + smaller height */
+input: {
+  alignSelf: 'center',
+  width: '85%',      // ← increased horizontal length
+  height: 44,
+  borderRadius: 100,
+  borderWidth: 1,
+  borderColor: 'rgba(19,19,19,0.12)',
+  paddingHorizontal: 16,
+  backgroundColor: 'rgba(255, 255, 255, 0.55)',
+  marginBottom: 16,
+  shadowColor: '#000',
+  shadowOpacity: 0.06,
+  shadowOffset: { width: 0, height: 3 },
+  shadowRadius: 5,
+  elevation: 2,
+},
   codeBox: {
     alignSelf: 'center',
     paddingVertical: 24,
