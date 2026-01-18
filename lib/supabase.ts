@@ -128,11 +128,17 @@ export const getMyTasks = async (userId: string, groupId: string) => {
   return data;
 };
 
-export const getAllGroupTasks = async (groupId: string) => {
+export const getCompletedGroupTasks = async (groupId: string) => {
   const { data, error } = await supabase
     .from("tasks")
-    .select("*, profiles(username)")
+    .select(
+      `
+      *,
+      profiles:user_id (username, avatar_url)
+    `,
+    )
     .eq("group_id", groupId)
+    .eq("completed", true)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data;
@@ -219,6 +225,25 @@ export const subscribeToGroupTasks = (
     .subscribe();
 };
 
+export const subscribeToGroupMembers = (
+  groupId: string,
+  onUpdate: () => void,
+) => {
+  return supabase
+    .channel(`group-members-${groupId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "group_members",
+        filter: `group_id=eq.${groupId}`,
+      },
+      onUpdate,
+    )
+    .subscribe();
+};
+
 export const pickImage = async (useCamera: boolean = false) => {
   // Ask which source
   if (useCamera) {
@@ -295,4 +320,14 @@ export const uploadTaskPhoto = async (taskId: string, uri: string) => {
 
   const { data } = supabase.storage.from("task-photos").getPublicUrl(fileName);
   return data.publicUrl;
+};
+
+export const getProfile = async (userId: string) => {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+  if (error) throw error;
+  return data;
 };

@@ -111,10 +111,10 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   proofPhoto: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginTop: 8,
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+    marginTop: 12,
   },
   completeButton: {
     backgroundColor: "#6366F1",
