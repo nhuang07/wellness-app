@@ -30,71 +30,68 @@ export default function MenuDrawer({
   onJoinGroup,
   onSelectGroup,
 }: MenuDrawerProps) {
-  // Start fully off-screen to the left
   const slideAnim = useRef(new Animated.Value(-TARGET_WIDTH)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 250,
-      useNativeDriver: true, // animating transform
-    }).start();
-  }, [slideAnim]);
+    // Slide in from left
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 280,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 280,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
-  const animateOutThen = (cb?: () => void) => {
-    Animated.timing(slideAnim, {
-      toValue: -TARGET_WIDTH,
-      duration: 220,
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) {
-        cb?.();
-      }
-    });
-  };
-
-  const handleCloseOnly = () => {
-    animateOutThen(onClose);
-  };
-
-  const handleSelectGroup = (groupId: string) => {
-    animateOutThen(() => {
-      onSelectGroup?.(groupId);
+  const animateOut = (callback?: () => void) => {
+    // Slide out to left
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: -TARGET_WIDTH,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
       onClose();
-    });
-  };
-
-  const handleCreateGroup = () => {
-    animateOutThen(() => {
-      onCreateGroup();
-      onClose();
-    });
-  };
-
-  const handleJoinGroup = () => {
-    animateOutThen(() => {
-      onJoinGroup();
-      onClose();
-    });
-  };
-
-  const handleProfile = () => {
-    animateOutThen(() => {
-      onProfile();
-      onClose();
+      callback?.();
     });
   };
 
   return (
-    <View style={styles.overlay}>
-      {/* Drawer */}
+    <View style={styles.container} pointerEvents="box-none">
+      {/* Backdrop with fade */}
       <Animated.View
         style={[
-          styles.drawerContainer,
+          styles.backdrop,
+          {
+            opacity: fadeAnim,
+          },
+        ]}
+        pointerEvents="auto"
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => animateOut()} />
+      </Animated.View>
+
+      {/* Drawer sliding from left */}
+      <Animated.View
+        style={[
+          styles.drawer,
           {
             transform: [{ translateX: slideAnim }],
           },
         ]}
+        pointerEvents="auto"
       >
         <ImageBackground
           source={require('../assets/images/auth-bg-1.png')}
@@ -102,10 +99,9 @@ export default function MenuDrawer({
           resizeMode="cover"
         >
           <View style={styles.content}>
-            {/* Close Button */}
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={handleCloseOnly}
+              onPress={() => animateOut()}
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
@@ -114,17 +110,16 @@ export default function MenuDrawer({
 
             <Text style={styles.title}>Your Groups</Text>
 
-            {/* Groups List */}
             <View style={styles.groupsList}>
               {groups.length === 0 ? (
-                <Text style={styles.emptyText}>You’re not in any groups yet.</Text>
+                <Text style={styles.emptyText}>You're not in any groups yet.</Text>
               ) : (
                 groups.map((group, index) => (
                   <TouchableOpacity
                     key={index}
                     style={styles.groupItem}
                     activeOpacity={0.8}
-                    onPress={() => handleSelectGroup(group)}
+                    onPress={() => animateOut(() => onSelectGroup?.(group))}
                   >
                     <Text style={styles.groupText}>{group}</Text>
                   </TouchableOpacity>
@@ -132,11 +127,10 @@ export default function MenuDrawer({
               )}
             </View>
 
-            {/* Create / Join Buttons */}
             <View style={styles.actionsContainer}>
               <TouchableOpacity
                 style={styles.groupButton}
-                onPress={handleCreateGroup}
+                onPress={() => animateOut(onCreateGroup)}
                 activeOpacity={0.8}
               >
                 <Text style={styles.groupButtonText}>Create Group</Text>
@@ -144,17 +138,16 @@ export default function MenuDrawer({
 
               <TouchableOpacity
                 style={styles.groupButton}
-                onPress={handleJoinGroup}
+                onPress={() => animateOut(onJoinGroup)}
                 activeOpacity={0.8}
               >
                 <Text style={styles.groupButtonText}>Join Group</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Profile Button */}
             <TouchableOpacity
               style={styles.profileButton}
-              onPress={handleProfile}
+              onPress={() => animateOut(onProfile)}
               activeOpacity={0.8}
             >
               <Text style={styles.profileButtonText}>Profile</Text>
@@ -162,48 +155,51 @@ export default function MenuDrawer({
           </View>
         </ImageBackground>
       </Animated.View>
-
-      {/* Dark overlay that closes drawer on tap */}
-      <Pressable style={styles.backdrop} onPress={handleCloseOnly} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // Full-screen overlay
-  overlay: {
+  container: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    flexDirection: 'row',
     zIndex: 999,
   },
 
-  // Drawer fixed width & full height; solid bg so it never looks transparent
-  drawerContainer: {
-    width: TARGET_WIDTH,
-    height: '100%',
-    //backgroundColor: '#ffffff',
-    overflow: 'hidden',
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
 
-  // Background image fills drawer
+  drawer: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: TARGET_WIDTH,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 4, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+
   bgImage: {
     flex: 1,
-    backgroundColor: '#ffffff',
   },
 
   content: {
     flex: 1,
     padding: 24,
     paddingTop: 60,
-  },
-
-  // Clickable dark area
-  backdrop: {
-    flex: 1,
   },
 
   closeButton: {

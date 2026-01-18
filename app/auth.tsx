@@ -30,10 +30,13 @@ export default function AuthScreen() {
     try {
       if (isLogin) {
         await signIn(email, password);
+        // Existing user - go to main tab
+        router.replace("/");
       } else {
         await signUp(email, password, username);
+        // New user - go to connect page
+        router.replace("/connect-page");
       }
-      router.push("/connect-page");
     } catch (error: any) {
       Alert.alert("Error", error.message);
     } finally {
