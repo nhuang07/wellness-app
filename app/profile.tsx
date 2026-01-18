@@ -5,6 +5,7 @@ import {
   uploadAvatar,
 } from "@/lib/profile";
 import { supabase } from "@/lib/supabase";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -34,7 +35,6 @@ export default function ProfileScreen() {
   });
   const [avatarKey, setAvatarKey] = useState(0);
 
-  // Team info
   const [team, setTeam] = useState<{
     name: string;
     invite_code: string;
@@ -56,9 +56,6 @@ export default function ProfileScreen() {
 
       const profile = await getProfile(user.id);
       console.log("2. Profile:", profile);
-      console.log("3. Username:", profile.username);
-      console.log("4. Bio:", profile.bio);
-      console.log("5. Avatar:", profile.avatar_url);
 
       setUsername(profile.username || "");
       setBio(profile.bio || "");
@@ -67,8 +64,6 @@ export default function ProfileScreen() {
         tasksThisWeek: profile.tasks_completed_week || 0,
         tasksAllTime: profile.tasks_completed_total || 0,
       });
-
-      // ... rest of function
     } catch (error) {
       console.log("ERROR loading profile:", error);
     } finally {
@@ -110,7 +105,7 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    // Routing will be handled by _layout.tsx auth listener
+    router.replace("/auth");
   };
 
   if (loading) {
@@ -240,8 +235,8 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity 
-          style={styles.logoutButton} 
+        <TouchableOpacity
+          style={styles.logoutButton}
           onPress={handleLogout}
           activeOpacity={0.8}
         >
