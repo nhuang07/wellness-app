@@ -80,32 +80,18 @@ export default function MenuDrawer({
   };
 
   return (
-    <View style={styles.container} pointerEvents="box-none">
-      {/* Backdrop with fade */}
-      <Animated.View
-        style={[
-          styles.backdrop,
-          {
-            opacity: fadeAnim,
-          },
-        ]}
-        pointerEvents="auto"
-      >
+    <View style={styles.container}>
+      {/* Animated backdrop */}
+      <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={() => animateOut()}
         />
       </Animated.View>
 
-      {/* Drawer sliding from left */}
+      {/* Sliding drawer */}
       <Animated.View
-        style={[
-          styles.drawer,
-          {
-            transform: [{ translateX: slideAnim }],
-          },
-        ]}
-        pointerEvents="auto"
+        style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}
       >
         <ImageBackground
           source={require("../assets/images/auth-bg-1.png")}
@@ -211,12 +197,6 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: TARGET_WIDTH,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   bgImage: {
     flex: 1,
