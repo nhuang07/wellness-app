@@ -1,26 +1,26 @@
 import TaskCard from "@/components/TaskCard";
 import {
-  getCompletedGroupTasks,
-  getGroupMembers,
-  getMyGroup,
-  getMyTasks,
-  getProfile,
-  subscribeToGroupMembers,
-  subscribeToGroupTasks,
-  supabase,
+    getCompletedGroupTasks,
+    getGroupMembers,
+    getMyGroup,
+    getMyTasks,
+    getProfile,
+    subscribeToGroupMembers,
+    subscribeToGroupTasks,
+    supabase,
 } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  ImageBackground,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    ImageBackground,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 export default function TasksScreen() {
