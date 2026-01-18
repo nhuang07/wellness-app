@@ -125,7 +125,6 @@ export const leaveGroup = async (userId: string, groupId: string) => {
     .eq("group_id", groupId);
 
   if (error) throw error;
-  return true;
 };
 
 // ============ TASKS ============

@@ -44,20 +44,26 @@ export default function GroupInfoButton({
         style: "destructive",
         onPress: async () => {
           try {
-            // 1) Get current user
+            console.log("Starting leave group...");
+
             const { data, error: userError } = await supabase.auth.getUser();
+            console.log("User:", data?.user?.id, "Error:", userError);
+
             if (userError || !data.user) {
               Alert.alert("Error", "Could not get current user.");
               return;
             }
             const userId = data.user.id;
 
-            // 2) Look up group by invite code to get the groupId (UUID)
+            console.log("Looking up group with code:", inviteCode);
+
             const { data: group, error: groupError } = await supabase
               .from("groups")
               .select("id")
               .eq("invite_code", inviteCode.toLowerCase())
               .single();
+
+            console.log("Group:", group, "Error:", groupError);
 
             if (groupError || !group?.id) {
               Alert.alert(
@@ -68,21 +74,25 @@ export default function GroupInfoButton({
             }
 
             const groupId = group.id;
+            console.log(
+              "Calling leaveGroup with userId:",
+              userId,
+              "groupId:",
+              groupId,
+            );
 
-            // 3) Remove membership row in group_members
             await leaveGroup(userId, groupId);
+            console.log("Left group successfully");
 
-            // 4) Close modal
             setVisible(false);
 
-            // 5) Let parent screen refresh its group + side menu
             if (onLeftGroup) {
               onLeftGroup();
             } else {
-              // fallback: reload tabs layout
               router.replace("/");
             }
           } catch (error: any) {
+            console.log("Error:", error);
             Alert.alert("Error", error.message ?? "Failed to leave group");
           }
         },
@@ -109,15 +119,9 @@ export default function GroupInfoButton({
         onRequestClose={() => setVisible(false)}
       >
         {/* Clickable dim background */}
-        <Pressable
-          style={styles.overlay}
-          onPress={() => setVisible(false)}
-        >
+        <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
           {/* Popup (prevents closing when tapped) */}
-          <Pressable
-            style={styles.popup}
-            onPress={(e) => e.stopPropagation()}
-          >
+          <Pressable style={styles.popup} onPress={(e) => e.stopPropagation()}>
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setVisible(false)}

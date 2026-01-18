@@ -270,22 +270,22 @@ export default function GroupHomeScreen() {
   };
 
   const loadTasks = async (uid?: string, gid?: string) => {
-  const currentUserId = uid || userId;
-  const currentGroupId = gid || group?.id;
-  if (!currentUserId || !currentGroupId) return;
+    const currentUserId = uid || userId;
+    const currentGroupId = gid || group?.id;
+    if (!currentUserId || !currentGroupId) return;
 
-  const myTasks = await getMyTasks(currentUserId, currentGroupId);
-  
-  // Only show INCOMPLETE tasks in "My Tasks"
-  const incompleteTasks = myTasks.filter((task) => !task.completed);
-  setTasks(incompleteTasks);
+    const myTasks = await getMyTasks(currentUserId, currentGroupId);
 
-  const groupTasks = await getCompletedGroupTasks(currentGroupId);
-  setAllTasks(groupTasks);
-  setTasksLoaded(true);
+    // Only show INCOMPLETE tasks in "My Tasks"
+    const incompleteTasks = myTasks.filter((task) => !task.completed);
+    setTasks(incompleteTasks);
 
-  const uncompleted = await getUncompletedGroupTasks(currentGroupId);
-  setUncompletedTasks(uncompleted);
+    const groupTasks = await getCompletedGroupTasks(currentGroupId);
+    setAllTasks(groupTasks);
+    setTasksLoaded(true);
+
+    const uncompleted = await getUncompletedGroupTasks(currentGroupId);
+    setUncompletedTasks(uncompleted);
   };
 
   const loadMembers = async (gid?: string) => {
@@ -577,8 +577,26 @@ export default function GroupHomeScreen() {
 
             <GroupInfoButton
               inviteCode={group?.invite_code || "------"}
-              groupTasks={tasks}
+              groupTasks={allTasks}
               myTasks={tasks}
+              onLeftGroup={async () => {
+                // Reload groups to see what's left
+                const userGroups = await getMyGroups(userId!);
+                const groups = userGroups
+                  .map((g: any) => g.groups)
+                  .filter(Boolean);
+
+                if (groups.length > 0) {
+                  // Switch to first remaining group
+                  setGroup(groups[0]);
+                  setAllGroups(groups);
+                  await loadTasks(userId!, groups[0].id);
+                  await loadMembers(groups[0].id);
+                } else {
+                  // No groups left, go to connect page
+                  router.replace("/connect-page");
+                }
+              }}
             />
           </View>
 
@@ -677,51 +695,47 @@ export default function GroupHomeScreen() {
           </View>
 
           {/* Tab Switcher */}
-            <View style={styles.tabContainer}>
-              <TouchableOpacity
-                style={[styles.tab, activeTab === "mine" && styles.activeTab]}
-                onPress={() => setActiveTab("mine")}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === "mine" && styles.activeTabText,
-                  ]}
-                >
-                  My Tasks ({tasks.length})
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === "mine" && styles.activeTab]}
+              onPress={() => setActiveTab("mine")}
+            >
+              <Text
                 style={[
-                  styles.tab,
-                  activeTab === "pending" && styles.activeTab,
+                  styles.tabText,
+                  activeTab === "mine" && styles.activeTabText,
                 ]}
-                onPress={() => setActiveTab("pending")}
               >
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === "pending" && styles.activeTabText,
-                  ]}
-                >
-                  To Do ({uncompletedTasks.length})
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.tab, activeTab === "all" && styles.activeTab]}
-                onPress={() => setActiveTab("all")}
+                My Tasks ({tasks.length})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === "pending" && styles.activeTab]}
+              onPress={() => setActiveTab("pending")}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "pending" && styles.activeTabText,
+                ]}
               >
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === "all" && styles.activeTabText,
-                  ]}
-                >
-                  Completed ({allTasks.length})
-                </Text>
-              </TouchableOpacity>
-            </View>
-          
+                To Do ({uncompletedTasks.length})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === "all" && styles.activeTab]}
+              onPress={() => setActiveTab("all")}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "all" && styles.activeTabText,
+                ]}
+              >
+                Completed ({allTasks.length})
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Task List */}
           <View style={styles.todoContainer}>
