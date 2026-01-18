@@ -6,6 +6,7 @@ import {
   Alert,
   ImageBackground,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
 } from 'react-native';
 
@@ -21,6 +22,7 @@ function generateCode() {
 
 export default function CreateGroupScreen() {
   const [code, setCode] = useState('');
+  const [groupName, setGroupName] = useState('');   // ← added
   const router = useRouter();
 
   useEffect(() => {
@@ -33,6 +35,7 @@ export default function CreateGroupScreen() {
   };
 
   const goToGroup = () => {
+    // you can later use groupName when you store the group in a backend
     router.push(`/group/${code}`);
   };
 
@@ -56,6 +59,16 @@ export default function CreateGroupScreen() {
           <Text style={styles.subtitle}>
             Share this code so others can join:
           </Text>
+
+          {/* Group name textbox under "Create Group" */}
+          <Text style={styles.label}>Group name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter group name..."
+            placeholderTextColor="rgba(19,19,19,0.5)"
+            value={groupName}
+            onChangeText={setGroupName}
+          />
 
           <View style={styles.codeBox}>
             <Text style={styles.codeText}>{code}</Text>
@@ -124,7 +137,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     opacity: 0.8,
-    marginBottom: 16,
+    marginBottom: 8,
+  },
+
+  label: {
+    fontSize: 14,
+    color: '#131313',
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+
+  input: {
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(19,19,19,0.2)',
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    marginBottom: 12,
   },
 
   codeBox: {
