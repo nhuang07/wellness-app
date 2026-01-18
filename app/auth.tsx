@@ -33,7 +33,7 @@ export default function AuthScreen() {
       } else {
         await signUp(email, password, username);
       }
-      router.replace("/connect-page");
+      router.replace("/create-group");
     } catch (error: any) {
       Alert.alert("Error", error.message);
     } finally {
@@ -54,7 +54,12 @@ export default function AuthScreen() {
         {/* HEADER */}
         <View style={styles.header}>
           <Text style={styles.title}>
-            {isLogin ? "Log in" : "Sign up"}
+            {isLogin ? "Welcome!" : "Create Account"}
+          </Text>
+          <Text style={styles.subtitle}>
+            {isLogin
+              ? "Sign in to continue"
+              : "Join us and start connecting"}
           </Text>
         </View>
 
@@ -64,7 +69,7 @@ export default function AuthScreen() {
             <TextInput
               style={styles.input}
               placeholder="Username"
-              placeholderTextColor="rgba(60,60,67,0.4)"
+              placeholderTextColor="rgba(19, 19, 19, 0.5)"
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
@@ -74,7 +79,7 @@ export default function AuthScreen() {
           <TextInput
             style={styles.input}
             placeholder="Email"
-            placeholderTextColor="rgba(60,60,67,0.4)"
+            placeholderTextColor="rgba(19, 19, 19, 0.5)"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -84,7 +89,7 @@ export default function AuthScreen() {
           <TextInput
             style={styles.input}
             placeholder="Password"
-            placeholderTextColor="rgba(60,60,67,0.4)"
+            placeholderTextColor="rgba(19, 19, 19, 0.5)"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -100,8 +105,8 @@ export default function AuthScreen() {
               {loading
                 ? "Please wait..."
                 : isLogin
-                ? "Sign in"
-                : "Create account"}
+                ? "Sign In"
+                : "Create Account"}
             </Text>
           </TouchableOpacity>
 
@@ -133,13 +138,20 @@ const styles = StyleSheet.create({
 
   header: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 32,
   },
 
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: "700",
     color: "#131313",
+    marginBottom: 8,
+  },
+
+  subtitle: {
+    fontSize: 16,
+    color: "#131313",
+    opacity: 0.8,
   },
 
   form: {
@@ -147,25 +159,29 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    height: 48,
+    height: 52,
     borderRadius: 100,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     fontSize: 16,
     backgroundColor: "rgba(83, 212, 216, 0.35)",
-    color: "#000",
+    color: "#131313",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
 
   primaryButton: {
-    height: 48,
+    height: 52,
     borderRadius: 100,
-    backgroundColor: "rgba(120,120,128,0.16)",
+    backgroundColor: "rgba(120, 120, 128, 0.16)",
     justifyContent: "center",
     alignItems: "center",
     marginTop: 12,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
 
   primaryButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
     color: "#131313",
   },
@@ -173,17 +189,18 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: 24,
   },
 
   footerText: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#131313",
+    opacity: 0.8,
   },
 
   footerLink: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     color: "#131313",
   },
 });
