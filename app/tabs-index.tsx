@@ -325,24 +325,18 @@ export default function GroupHomeScreen() {
     >
       <View style={styles.container}>
         {/* Menu Drawer */}
-        <Modal visible={menuOpen} animationType="slide" transparent>
-          <View style={{ flex: 1, flexDirection: "row" }}>
-            <MenuDrawer
-              groups={allGroups}
-              currentGroupId={group?.id}
-              loading={groupsLoading}
-              onClose={() => setMenuOpen(false)}
-              onProfile={goToProfile}
-              onCreateGroup={() => router.push("/create-group")}
-              onJoinGroup={() => router.push("/join-group")}
-              onSelectGroup={handleSelectGroup}
-            />
-            <TouchableOpacity
-              style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.3)" }}
-              onPress={() => setMenuOpen(false)}
-            />
-          </View>
-        </Modal>
+        {menuOpen && (
+          <MenuDrawer
+            groups={allGroups}
+            currentGroupId={group?.id}
+            loading={groupsLoading}
+            onClose={() => setMenuOpen(false)}
+            onProfile={goToProfile}
+            onCreateGroup={() => router.push("/create-group")}
+            onJoinGroup={() => router.push("/join-group")}
+            onSelectGroup={handleSelectGroup}
+          />
+        )}
 
         {/* Profile Modal */}
         <Modal
