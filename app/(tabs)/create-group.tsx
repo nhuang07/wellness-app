@@ -34,9 +34,13 @@ export default function CreateGroupScreen() {
     Alert.alert('Copied! 🎉', 'Group code copied to clipboard.');
   };
 
-  const goToGroup = () => {
+const goToGroup = () => {
+  if (groupName.trim().length < 1) {
+    Alert.alert("Group Name Required", "Please enter a group name before continuing.");
+    return;
+  }
   router.push('/(tabs)');
-  };
+};
 
   return (
     <ImageBackground
