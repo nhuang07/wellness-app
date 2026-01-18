@@ -30,7 +30,6 @@ export default function ProfileScreen() {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [stats, setStats] = useState({
-    tasksThisWeek: 0,
     tasksAllTime: 0,
   });
   const [avatarKey, setAvatarKey] = useState(0);
@@ -57,12 +56,18 @@ export default function ProfileScreen() {
       const profile = await getProfile(user.id);
       console.log("2. Profile:", profile);
 
+      // Count all completed tasks across all groups
+      const { count: tasksAllTime } = await supabase
+        .from("tasks")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("completed", true);
+
       setUsername(profile.username || "");
       setBio(profile.bio || "");
       setAvatarUrl(profile.avatar_url);
       setStats({
-        tasksThisWeek: profile.tasks_completed_week || 0,
-        tasksAllTime: profile.tasks_completed_total || 0,
+        tasksAllTime: tasksAllTime || 0,
       });
     } catch (error) {
       console.log("ERROR loading profile:", error);
@@ -163,12 +168,8 @@ export default function ProfileScreen() {
 
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{stats.tasksThisWeek}</Text>
-            <Text style={styles.statLabel}>This Week</Text>
-          </View>
-          <View style={styles.statBox}>
             <Text style={styles.statNumber}>{stats.tasksAllTime}</Text>
-            <Text style={styles.statLabel}>All Time</Text>
+            <Text style={styles.statLabel}>Tasks Completed</Text>
           </View>
         </View>
 
@@ -198,7 +199,9 @@ export default function ProfileScreen() {
             <Text style={styles.sectionTitle}>My Team</Text>
             <View style={styles.teamCard}>
               <Text style={styles.teamName}>🏠 {team.name}</Text>
-              <Text style={styles.teamCode}>Invite code: {team.invite_code}</Text>
+              <Text style={styles.teamCode}>
+                Invite code: {team.invite_code}
+              </Text>
             </View>
           </View>
         )}

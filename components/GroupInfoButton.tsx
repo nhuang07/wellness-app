@@ -28,7 +28,7 @@ export default function GroupInfoButton({
 }: GroupInfoButtonProps) {
   const [visible, setVisible] = useState(false);
 
-  const groupCompleted = groupTasks?.filter((t) => t.completed).length ?? 0;
+  const groupCompleted = groupTasks?.length ?? 0;
   const myCompleted = myTasks?.filter((t) => t.completed).length ?? 0;
 
   const handleCopy = async () => {

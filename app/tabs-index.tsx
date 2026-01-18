@@ -2,8 +2,8 @@
 import GroupInfoButton from "@/components/GroupInfoButton";
 import MenuDrawer from "@/components/MenuDrawer";
 import TaskCard from "@/components/TaskCard";
-import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 
 import { generateTasksForUser } from "@/lib/gemini";
 import {
@@ -26,6 +26,8 @@ import React from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Easing,
   Image,
   ImageBackground,
   Modal,
@@ -37,6 +39,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+const NWTaskComplete = require("@/assets/task_complete.gif");
 
 // Pet images
 const NWHappy = require("@/assets/images/NWhappy.png");
@@ -66,8 +69,12 @@ export default function GroupHomeScreen() {
   const [activeTab, setActiveTab] = useState<"mine" | "pending" | "all">(
     "mine",
   );
+  const [isAnimating, setIsAnimating] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [tasksLoaded, setTasksLoaded] = useState(false);
+
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
 
   // Profile modal
   const [selectedMember, setSelectedMember] = useState<any>(null);
@@ -374,9 +381,26 @@ export default function GroupHomeScreen() {
   const openMemberProfile = async (member: any) => {
     try {
       const profile = await getProfile(member.user_id);
+
+      // Count tasks completed in this group (allTasks is already completed tasks)
+      const groupTasksCompleted = allTasks.filter(
+        (t) => t.user_id === member.user_id,
+      ).length;
+
+      // Count all tasks completed ever (across all groups)
+      const { count: totalCompleted } = await supabase
+        .from("tasks")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", member.user_id)
+        .eq("completed", true);
+
       setSelectedMember({
         ...member,
-        fullProfile: profile,
+        fullProfile: {
+          ...profile,
+          tasks_completed_group: groupTasksCompleted,
+          tasks_completed_total: totalCompleted || 0,
+        },
       });
       setProfileModalVisible(true);
     } catch (error) {
@@ -406,6 +430,83 @@ export default function GroupHomeScreen() {
       </View>
     );
   }
+
+  const happyWiggle = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnim, {
+        toValue: 10,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -10,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 10,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const neutralBob = () => {
+    Animated.sequence([
+      Animated.timing(bounceAnim, {
+        toValue: -10,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bounceAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const sadShake = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnim, {
+        toValue: 5,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -5,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const taskCompleteAnimation = () => {
+    Animated.sequence([
+      Animated.timing(bounceAnim, {
+        toValue: -30,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bounceAnim, {
+        toValue: 0,
+        duration: 200,
+        easing: Easing.bounce,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    happyWiggle();
+  };
 
   return (
     <ImageBackground
@@ -468,9 +569,9 @@ export default function GroupHomeScreen() {
                   <View style={styles.modalStats}>
                     <View style={styles.statBox}>
                       <Text style={styles.statNumber}>
-                        {selectedMember.fullProfile?.tasks_completed_week || 0}
+                        {selectedMember.fullProfile?.tasks_completed_group || 0}
                       </Text>
-                      <Text style={styles.statLabel}>This Week</Text>
+                      <Text style={styles.statLabel}>This Group</Text>
                     </View>
                     <View style={styles.statBox}>
                       <Text style={styles.statNumber}>
@@ -576,7 +677,7 @@ export default function GroupHomeScreen() {
               >
                 <Text style={styles.homeButtonText}>🏠</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 onPress={() => setMenuOpen(true)}
                 style={styles.menuButton}
@@ -611,10 +712,29 @@ export default function GroupHomeScreen() {
             />
           </View>
 
-
           {/* Mascot */}
           <View style={styles.mascotContainer}>
-            <Image source={getCreatureImage()} style={styles.mascot} />
+            <TouchableOpacity
+              onPress={() => {
+                if (petMood > 50) happyWiggle();
+                else if (petMood > 10) neutralBob();
+                else sadShake();
+              }}
+              activeOpacity={0.9}
+            >
+              <Animated.Image
+                source={getCreatureImage()}
+                style={[
+                  styles.mascot,
+                  {
+                    transform: [
+                      { translateX: shakeAnim },
+                      { translateY: bounceAnim },
+                    ],
+                  },
+                ]}
+              />
+            </TouchableOpacity>
 
             {/* Mood Bar */}
             <View style={styles.moodBarContainer}>
@@ -1278,9 +1398,9 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
   },
   headerLeft: {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   homeButton: {
     width: 40,
