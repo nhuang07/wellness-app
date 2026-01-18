@@ -2,10 +2,11 @@ import { Text, View } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Alert,
-    Pressable,
-    StyleSheet,
-    TextInput,
+  Alert,
+  ImageBackground,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
 
 export default function JoinGroupScreen() {
@@ -25,79 +26,119 @@ export default function JoinGroupScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      
-      <Pressable style={styles.backButton} onPress={() => router.replace('/connect-page')}>
-        <Text style={styles.backButtonText}>← Back</Text>
-      </Pressable>
+    <ImageBackground
+      source={require('../../assets/images/auth-bg-1.png')}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
+      <View style={styles.container}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.replace('/connect-page')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
 
-      <Text style={styles.title}>Join Group</Text>
+        <View style={styles.content}>
+          <Text style={styles.title}>Join Group</Text>
+          <Text style={styles.subtitle}>Enter 5-letter code:</Text>
 
-      <Text style={styles.label}>Enter 5-letter code:</Text>
+          <TextInput
+            style={styles.input}
+            value={code}
+            onChangeText={(text) => setCode(text)}
+            autoCapitalize="characters"
+            maxLength={5}
+            placeholder="XXXXX"
+            placeholderTextColor="rgba(19, 19, 19, 0.24)"
+          />
 
-      <TextInput
-        style={styles.input}
-        value={code}
-        onChangeText={(text) => setCode(text)}
-        autoCapitalize="characters"
-        maxLength={5}
-        placeholder="ABCDE"
-        placeholderTextColor="#888"
-      />
-
-      <Pressable style={styles.joinButton} onPress={handleJoin}>
-        <Text style={styles.joinButtonText}>Join</Text>
-      </Pressable>
-    </View>
+          <TouchableOpacity
+            style={styles.joinButton}
+            onPress={handleJoin}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.joinButtonText}>Join</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#101010',
+    backgroundColor: 'transparent',
     padding: 24,
     justifyContent: 'center',
   },
+
   backButton: {
     position: 'absolute',
-    top: 40,
+    top: 60,
     left: 24,
-    padding: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
+
   backButtonText: {
-    color: '#955bf2ff',
-    fontSize: 18,
+    color: '#131313',
+    fontSize: 16,
+    fontWeight: '600',
   },
+
+  content: {
+    backgroundColor: 'transparent',
+    gap: 16,
+  },
+
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 24,
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#131313',
+    marginBottom: 8,
     textAlign: 'center',
   },
-  label: {
-    color: '#fff',
+
+  subtitle: {
+    fontSize: 16,
+    color: '#131313',
+    opacity: 0.8,
+    textAlign: 'center',
     marginBottom: 8,
   },
+
   input: {
-    backgroundColor: '#222',
-    color: '#fff',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 18,
-    letterSpacing: 3,
-    marginBottom: 16,
+    height: 52,
+    backgroundColor: 'rgba(83, 212, 216, 0.35)',
+    color: '#131313',
+    borderRadius: 100,
+    paddingHorizontal: 20,
+    fontSize: 24,
+    letterSpacing: 8,
+    textAlign: 'center',
+    fontWeight: '700',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
+
   joinButton: {
-    backgroundColor: '#955bf2ff',
-    paddingVertical: 14,
-    borderRadius: 8,
+    height: 52,
+    backgroundColor: 'rgba(120, 120, 128, 0.16)',
+    borderRadius: 100,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
+
   joinButtonText: {
-    color: '#fff',
+    color: '#131313',
     fontSize: 18,
     fontWeight: '600',
   },

@@ -2,7 +2,13 @@ import { Text, View } from '@/components/Themed';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet } from 'react-native';
+import {
+  Alert,
+  ImageBackground,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native';
 
 function generateCode() {
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -16,6 +22,7 @@ function generateCode() {
 
 export default function CreateGroupScreen() {
   const [code, setCode] = useState('');
+  const [groupName, setGroupName] = useState('');   // ← added
   const router = useRouter();
 
   useEffect(() => {
@@ -24,104 +31,179 @@ export default function CreateGroupScreen() {
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(code);
-    Alert.alert('Copied', 'Group code copied to clipboard.');
+    Alert.alert('Copied! 🎉', 'Group code copied to clipboard.');
   };
 
   const goToGroup = () => {
+    // you can later use groupName when you store the group in a backend
     router.push(`/group/${code}`);
   };
 
   return (
-    <View style={styles.container}>
+    <ImageBackground
+      source={require('../../assets/images/auth-bg-1.png')}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
+      <View style={styles.container}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.replace('/connect-page')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
 
-      <Pressable style={styles.backButton} onPress={() => router.replace('/connect-page')}>
-        <Text style={styles.backButtonText}>← Back</Text>
-      </Pressable>
+        <View style={styles.content}>
+          <Text style={styles.title}>Create Group</Text>
+          <Text style={styles.subtitle}>
+            Share this code so others can join:
+          </Text>
 
-      <Text style={styles.title}>Create Group</Text>
-      <Text style={styles.subtitle}>Share this code so others can join:</Text>
+          {/* Group name textbox under "Create Group" */}
+          <Text style={styles.label}>Group name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter group name..."
+            placeholderTextColor="rgba(19,19,19,0.5)"
+            value={groupName}
+            onChangeText={setGroupName}
+          />
 
-      <View style={styles.codeBox}>
-        <Text style={styles.codeText}>{code}</Text>
+          <View style={styles.codeBox}>
+            <Text style={styles.codeText}>{code}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={handleCopy}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.primaryButtonText}>Copy Code</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={goToGroup}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.secondaryButtonText}>Go To Group Page</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      <Pressable style={styles.primaryButton} onPress={handleCopy}>
-        <Text style={styles.primaryButtonText}>Copy Code</Text>
-      </Pressable>
-
-      <Pressable style={styles.secondaryButton} onPress={goToGroup}>
-        <Text style={styles.secondaryButtonText}>Go To Group Page</Text>
-      </Pressable>
-
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#101010',
+    backgroundColor: 'transparent',
     padding: 24,
     justifyContent: 'center',
   },
+
   backButton: {
     position: 'absolute',
-    top: 40,
+    top: 60,
     left: 24,
-    padding: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
+
   backButtonText: {
-    color: '#955bf2ff',
-    fontSize: 18,
+    color: '#131313',
+    fontSize: 16,
+    fontWeight: '600',
   },
+
+  content: {
+    backgroundColor: 'transparent',
+    gap: 16,
+  },
+
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 12,
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#131313',
     textAlign: 'center',
+    marginBottom: 8,
   },
+
   subtitle: {
-    color: '#ccc',
-    marginBottom: 24,
+    color: '#131313',
+    fontSize: 16,
     textAlign: 'center',
+    opacity: 0.8,
+    marginBottom: 8,
   },
+
+  label: {
+    fontSize: 14,
+    color: '#131313',
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+
+  input: {
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(19,19,19,0.2)',
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    marginBottom: 12,
+  },
+
   codeBox: {
     alignSelf: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    backgroundColor: '#222',
-    marginBottom: 24,
+    paddingVertical: 24,
+    paddingHorizontal: 40,
+    borderRadius: 24,
+    backgroundColor: 'rgba(83, 212, 216, 0.35)',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
   },
+
   codeText: {
-    color: '#fff',
-    fontSize: 28,
-    letterSpacing: 6,
+    color: '#131313',
+    fontSize: 36,
+    letterSpacing: 8,
     fontWeight: '700',
   },
+
   primaryButton: {
-    backgroundColor: '#955bf2ff',
-    paddingVertical: 14,
-    borderRadius: 8,
+    height: 52,
+    borderRadius: 100,
+    backgroundColor: 'rgba(120, 120, 128, 0.16)',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  secondaryButton: {
     borderWidth: 2,
-    borderColor: '#955bf2ff',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
-  secondaryButtonText: {
-    color: '#955bf2ff',
+
+  primaryButtonText: {
     fontSize: 18,
     fontWeight: '600',
+    color: '#131313',
+  },
+
+  secondaryButton: {
+    height: 52,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+
+  secondaryButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#131313',
   },
 });
