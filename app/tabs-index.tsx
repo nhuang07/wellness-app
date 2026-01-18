@@ -2,37 +2,38 @@
 import GroupInfoButton from "@/components/GroupInfoButton";
 import MenuDrawer from "@/components/MenuDrawer";
 import TaskCard from "@/components/TaskCard";
-import { canNudgeUser, sendNudge } from "../lib/supabase";
 
 import { generateTasksForUser } from "@/lib/gemini";
 import {
-  getCompletedGroupTasks,
-  getGroupMembers,
-  getMyGroup,
-  getMyGroups,
-  getMyTasks,
-  getProfile,
-  subscribeToGroupMembers,
-  subscribeToGroupTasks,
-  supabase,
+    getCompletedGroupTasks,
+    getGroupMembers,
+    getMyGroup,
+    getMyGroups,
+    getMyTasks,
+    getProfile,
+    subscribeToGroupMembers,
+    subscribeToGroupTasks,
+    supabase,
 } from "@/lib/supabase";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ImageBackground,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Image,
+    ImageBackground,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
+// Pet images
 const NWHappy = require("@/assets/images/NWhappy.png");
+const NWNeutral = require("@/assets/images/NWneutral.png");
+const NWSad = require("@/assets/images/NWsad.png");
 
 export default function GroupHomeScreen() {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -51,8 +52,6 @@ export default function GroupHomeScreen() {
   const [customTask, setCustomTask] = useState("");
   const [allGroups, setAllGroups] = useState<any[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(false);
-  const [nudgeLoading, setNudgeLoading] = useState(false);
-  const [nudgeCooldown, setNudgeCooldown] = useState(0);
 
   // Tab for my tasks vs all tasks
   const [activeTab, setActiveTab] = useState<"mine" | "all">("mine");
@@ -61,7 +60,12 @@ export default function GroupHomeScreen() {
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
 
+  // Pet mood
+  const [petMood, setPetMood] = useState<number>(100);
+
   const groups = ["Study Buddies", "Fitness Friends", "Project Team"];
+  const petIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
 
   useEffect(() => {
     loadData();
@@ -85,6 +89,19 @@ export default function GroupHomeScreen() {
     };
   }, [group?.id]);
 
+  // Pet mood decay every 10 seconds
+  useEffect(() => {
+  startPetMoodDecay();
+  return () => clearInterval(petIntervalRef.current!);
+}, []);
+
+const startPetMoodDecay = () => {
+  if (petIntervalRef.current) clearInterval(petIntervalRef.current);
+  petIntervalRef.current = setInterval(() => {
+    setPetMood((prev) => Math.max(prev - 10, 0));
+  }, 10000);
+};
+
   const loadAllGroups = async (uid?: string) => {
     const currentUserId = uid || userId;
     if (!currentUserId) return;
@@ -92,7 +109,6 @@ export default function GroupHomeScreen() {
     setGroupsLoading(true);
     try {
       const userGroups = await getMyGroups(currentUserId);
-      // Extract the group objects
       const groups = userGroups.map((g: any) => g.groups).filter(Boolean);
       setAllGroups(groups);
     } catch (error) {
@@ -102,10 +118,9 @@ export default function GroupHomeScreen() {
     }
   };
 
-  // Add function to switch groups
+  // Switch groups
   const handleSelectGroup = (selectedGroup: any) => {
     setGroup(selectedGroup);
-    // Reload tasks and members for the new group
     if (userId && selectedGroup?.id) {
       loadTasks(userId, selectedGroup.id);
       loadMembers(selectedGroup.id);
@@ -113,7 +128,7 @@ export default function GroupHomeScreen() {
     setMenuOpen(false);
   };
 
-  // Call loadAllGroups in loadData
+  // Load initial data
   const loadData = async () => {
     try {
       const {
@@ -122,7 +137,6 @@ export default function GroupHomeScreen() {
       if (!user) return;
       setUserId(user.id);
 
-      // Load all groups
       await loadAllGroups(user.id);
 
       const myGroup = await getMyGroup(user.id);
@@ -168,7 +182,7 @@ export default function GroupHomeScreen() {
     try {
       const tasks = await generateTasksForUser(prompt);
       setGeneratedTasks(tasks);
-      setSelectedTasks(tasks); // Select all by default
+      setSelectedTasks(tasks);
       setShowTaskSelection(true);
       setPrompt("");
     } catch (error) {
@@ -228,49 +242,12 @@ export default function GroupHomeScreen() {
     }
   };
 
+  // Task completion increases mood
   const handleTaskComplete = async () => {
-    await loadTasks();
-    // Recalculate mood after task completion
-    const completed = allTasks.filter((t) => t.completed).length + 1;
-    const total = allTasks.length;
-    const newMood = Math.round((completed / total) * 100);
-
-    await supabase
-      .from("groups")
-      .update({ creature_mood: newMood })
-      .eq("id", group.id);
-
-    setGroup({ ...group, creature_mood: newMood });
-  };
-
-  const handleNudge = async () => {
-    if (!userId || !selectedMember?.user_id || !group?.id) return;
-
-    setNudgeLoading(true);
-    try {
-      const { canNudge, secondsLeft } = await canNudgeUser(
-        userId,
-        selectedMember.user_id,
-        group.id,
-      );
-
-      if (!canNudge) {
-        setNudgeCooldown(secondsLeft);
-        Alert.alert("Cooldown", `Wait ${secondsLeft}s before nudging again`);
-        return;
-      }
-
-      await sendNudge(userId, selectedMember.user_id, group.id);
-      Alert.alert(
-        "Nudged! 👉",
-        `You nudged ${selectedMember.fullProfile?.username || "them"}!`,
-      );
-    } catch (error: any) {
-      Alert.alert("Error", error.message);
-    } finally {
-      setNudgeLoading(false);
-    }
-  };
+  await loadTasks();
+  setPetMood((prev) => Math.min(prev + 20, 100));
+  startPetMoodDecay(); // <-- resets the 10-second timer
+};
 
   const openMemberProfile = async (member: any) => {
     try {
@@ -290,7 +267,9 @@ export default function GroupHomeScreen() {
   };
 
   const getCreatureImage = () => {
-    return NWHappy;
+    if (petMood > 50) return  NWHappy;
+    if (petMood > 10) return  NWNeutral;
+    return NWSad;
   };
 
   if (loading) {
@@ -314,18 +293,24 @@ export default function GroupHomeScreen() {
     >
       <View style={styles.container}>
         {/* Menu Drawer */}
-        {menuOpen && (
-          <MenuDrawer
-            groups={allGroups}
-            currentGroupId={group?.id}
-            loading={groupsLoading}
-            onClose={() => setMenuOpen(false)}
-            onProfile={goToProfile}
-            onCreateGroup={() => router.push("/create-group")}
-            onJoinGroup={() => router.push("/join-group")}
-            onSelectGroup={handleSelectGroup}
-          />
-        )}
+        <Modal visible={menuOpen} animationType="slide" transparent>
+          <View style={{ flex: 1, flexDirection: "row" }}>
+            <MenuDrawer
+              groups={allGroups}
+              currentGroupId={group?.id}
+              loading={groupsLoading}
+              onClose={() => setMenuOpen(false)}
+              onProfile={goToProfile}
+              onCreateGroup={() => router.push("/create-group")}
+              onJoinGroup={() => router.push("/join-group")}
+              onSelectGroup={handleSelectGroup}
+            />
+            <TouchableOpacity
+              style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.3)" }}
+              onPress={() => setMenuOpen(false)}
+            />
+          </View>
+        </Modal>
 
         {/* Profile Modal */}
         <Modal
@@ -374,18 +359,6 @@ export default function GroupHomeScreen() {
                       <Text style={styles.statLabel}>All Time</Text>
                     </View>
                   </View>
-                  {selectedMember?.user_id !== userId && (
-                    <TouchableOpacity
-                      style={styles.nudgeButton}
-                      onPress={handleNudge}
-                      disabled={nudgeLoading}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={styles.nudgeButtonText}>
-                        {nudgeLoading ? "Nudging..." : "👉 Nudge"}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
                 </>
               )}
             </View>
@@ -460,6 +433,7 @@ export default function GroupHomeScreen() {
           </View>
         </Modal>
 
+        {/* Main ScrollView */}
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
@@ -479,12 +453,10 @@ export default function GroupHomeScreen() {
             />
           </View>
 
-          {/* Mascot Image */}
+          {/* Mascot */}
           <View style={styles.mascotContainer}>
             <Image source={getCreatureImage()} style={styles.mascot} />
-            <Text style={styles.moodText}>
-              Mood: {group?.creature_mood || 50}%
-            </Text>
+            <Text style={styles.moodText}>Mood: {petMood}%</Text>
           </View>
 
           {/* Group Members */}
@@ -513,13 +485,11 @@ export default function GroupHomeScreen() {
             </ScrollView>
           </View>
 
-          {/* AI Task Generation - Always visible */}
+          {/* AI Task Generation */}
           <View style={styles.aiGenerateContainer}>
             <TouchableOpacity
               onPress={() => {
-                if (prompt.trim()) {
-                  handleGenerateTasks();
-                }
+                if (prompt.trim()) handleGenerateTasks();
               }}
               style={styles.aiGenerateButton}
               disabled={generating}
