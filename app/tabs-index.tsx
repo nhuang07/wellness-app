@@ -1164,9 +1164,9 @@ const styles = StyleSheet.create({
   padding: 16,
   marginBottom: 12,
   borderWidth: 2,
-  borderColor: "rgba(255, 152, 0, 0.3)",
+  borderColor: "#6365f160",
   borderLeftWidth: 4,
-  borderLeftColor: "#FF9800",
+  borderLeftColor: "#6366F1",
   },
   pendingTaskText: {
     fontSize: 16,
