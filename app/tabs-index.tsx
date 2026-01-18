@@ -5,28 +5,29 @@ import TaskCard from "@/components/TaskCard";
 
 import { generateTasksForUser } from "@/lib/gemini";
 import {
-    getCompletedGroupTasks,
-    getGroupMembers,
-    getMyGroup,
-    getMyTasks,
-    getProfile,
-    subscribeToGroupMembers,
-    subscribeToGroupTasks,
-    supabase,
+  getCompletedGroupTasks,
+  getGroupMembers,
+  getMyGroup,
+  getMyGroups,
+  getMyTasks,
+  getProfile,
+  subscribeToGroupMembers,
+  subscribeToGroupTasks,
+  supabase,
 } from "@/lib/supabase";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    ImageBackground,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  ImageBackground,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const NWHappy = require("@/assets/images/NWhappy.png");
@@ -46,6 +47,8 @@ export default function GroupHomeScreen() {
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [showTaskSelection, setShowTaskSelection] = useState(false);
   const [customTask, setCustomTask] = useState("");
+  const [allGroups, setAllGroups] = useState<any[]>([]);
+  const [groupsLoading, setGroupsLoading] = useState(false);
 
   // Tab for my tasks vs all tasks
   const [activeTab, setActiveTab] = useState<"mine" | "all">("mine");
@@ -78,6 +81,35 @@ export default function GroupHomeScreen() {
     };
   }, [group?.id]);
 
+  const loadAllGroups = async (uid?: string) => {
+    const currentUserId = uid || userId;
+    if (!currentUserId) return;
+
+    setGroupsLoading(true);
+    try {
+      const userGroups = await getMyGroups(currentUserId);
+      // Extract the group objects
+      const groups = userGroups.map((g: any) => g.groups).filter(Boolean);
+      setAllGroups(groups);
+    } catch (error) {
+      console.log("Error loading groups:", error);
+    } finally {
+      setGroupsLoading(false);
+    }
+  };
+
+  // Add function to switch groups
+  const handleSelectGroup = (selectedGroup: any) => {
+    setGroup(selectedGroup);
+    // Reload tasks and members for the new group
+    if (userId && selectedGroup?.id) {
+      loadTasks(userId, selectedGroup.id);
+      loadMembers(selectedGroup.id);
+    }
+    setMenuOpen(false);
+  };
+
+  // Call loadAllGroups in loadData
   const loadData = async () => {
     try {
       const {
@@ -85,6 +117,9 @@ export default function GroupHomeScreen() {
       } = await supabase.auth.getUser();
       if (!user) return;
       setUserId(user.id);
+
+      // Load all groups
+      await loadAllGroups(user.id);
 
       const myGroup = await getMyGroup(user.id);
       setGroup(myGroup);
@@ -249,11 +284,14 @@ export default function GroupHomeScreen() {
         <Modal visible={menuOpen} animationType="slide" transparent>
           <View style={{ flex: 1, flexDirection: "row" }}>
             <MenuDrawer
-              groups={groups}
+              groups={allGroups}
+              currentGroupId={group?.id}
+              loading={groupsLoading}
               onClose={() => setMenuOpen(false)}
               onProfile={goToProfile}
               onCreateGroup={() => router.push("/create-group")}
               onJoinGroup={() => router.push("/join-group")}
+              onSelectGroup={handleSelectGroup}
             />
             <TouchableOpacity
               style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.3)" }}
@@ -384,24 +422,23 @@ export default function GroupHomeScreen() {
         </Modal>
 
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-            <View style={styles.header}>
+          {/* Header */}
+          <View style={styles.header}>
             <TouchableOpacity
-                onPress={() => setMenuOpen(true)}
-                style={styles.menuButton}
+              onPress={() => setMenuOpen(true)}
+              style={styles.menuButton}
             >
-                <Text style={styles.menuButtonText}>☰</Text>
+              <Text style={styles.menuButtonText}>☰</Text>
             </TouchableOpacity>
 
             <Text style={styles.headerTitle}>{group?.name || "My Pet"}</Text>
 
             <GroupInfoButton
-                inviteCode={group?.invite_code || "------"}
-                groupTasks={tasks}
-                myTasks={tasks}
+              inviteCode={group?.invite_code || "------"}
+              groupTasks={tasks}
+              myTasks={tasks}
             />
-            </View>
-
+          </View>
 
           {/* Mascot Image */}
           <View style={styles.mascotContainer}>
@@ -563,7 +600,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 16,
-},
+  },
 
   menuButton: {
     width: 40,

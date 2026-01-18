@@ -1,29 +1,42 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Dimensions,
   ImageBackground,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_WIDTH = Dimensions.get("window").width;
 const TARGET_WIDTH = SCREEN_WIDTH * 0.7;
 
+interface Group {
+  id: string;
+  name: string;
+  invite_code: string;
+  creature_mood: number;
+}
+
 interface MenuDrawerProps {
-  groups: string[];
+  groups: Group[];
+  currentGroupId?: string;
+  loading?: boolean;
   onClose: () => void;
   onProfile: () => void;
   onCreateGroup: () => void;
   onJoinGroup: () => void;
-  onSelectGroup?: (groupId: string) => void;
+  onSelectGroup: (group: Group) => void;
 }
 
 export default function MenuDrawer({
   groups,
+  currentGroupId,
+  loading,
   onClose,
   onProfile,
   onCreateGroup,
@@ -34,7 +47,6 @@ export default function MenuDrawer({
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Slide in from left
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: 0,
@@ -50,7 +62,6 @@ export default function MenuDrawer({
   }, []);
 
   const animateOut = (callback?: () => void) => {
-    // Slide out to left
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: -TARGET_WIDTH,
@@ -80,7 +91,10 @@ export default function MenuDrawer({
         ]}
         pointerEvents="auto"
       >
-        <Pressable style={StyleSheet.absoluteFill} onPress={() => animateOut()} />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => animateOut()}
+        />
       </Animated.View>
 
       {/* Drawer sliding from left */}
@@ -94,7 +108,7 @@ export default function MenuDrawer({
         pointerEvents="auto"
       >
         <ImageBackground
-          source={require('../assets/images/auth-bg-1.png')}
+          source={require("../assets/images/auth-bg-1.png")}
           style={styles.bgImage}
           resizeMode="cover"
         >
@@ -110,22 +124,37 @@ export default function MenuDrawer({
 
             <Text style={styles.title}>Your Groups</Text>
 
-            <View style={styles.groupsList}>
-              {groups.length === 0 ? (
-                <Text style={styles.emptyText}>You're not in any groups yet.</Text>
+            <ScrollView
+              style={styles.groupsList}
+              showsVerticalScrollIndicator={false}
+            >
+              {loading ? (
+                <ActivityIndicator color="#6366F1" />
+              ) : groups.length === 0 ? (
+                <Text style={styles.emptyText}>
+                  You're not in any groups yet.
+                </Text>
               ) : (
-                groups.map((group, index) => (
+                groups.map((group) => (
                   <TouchableOpacity
-                    key={index}
-                    style={styles.groupItem}
+                    key={group.id}
+                    style={[
+                      styles.groupItem,
+                      currentGroupId === group.id && styles.groupItemActive,
+                    ]}
                     activeOpacity={0.8}
-                    onPress={() => animateOut(() => onSelectGroup?.(group))}
+                    onPress={() => animateOut(() => onSelectGroup(group))}
                   >
-                    <Text style={styles.groupText}>{group}</Text>
+                    <Text style={styles.groupText}>{group.name}</Text>
+                    <Text style={styles.groupMood}>
+                      {currentGroupId === group.id
+                        ? "✓ Active"
+                        : `Mood: ${group.creature_mood || 50}%`}
+                    </Text>
                   </TouchableOpacity>
                 ))
               )}
-            </View>
+            </ScrollView>
 
             <View style={styles.actionsContainer}>
               <TouchableOpacity
@@ -133,7 +162,7 @@ export default function MenuDrawer({
                 onPress={() => animateOut(onCreateGroup)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.groupButtonText}>Create Group</Text>
+                <Text style={styles.groupButtonText}>+ Create Group</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -161,131 +190,125 @@ export default function MenuDrawer({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
     zIndex: 999,
   },
-
   backdrop: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
-
   drawer: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     top: 0,
     bottom: 0,
     width: TARGET_WIDTH,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
+    backgroundColor: "#fff",
+    shadowColor: "#000",
     shadowOffset: { width: 4, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
   },
-
   bgImage: {
     flex: 1,
   },
-
   content: {
     flex: 1,
     padding: 24,
     paddingTop: 60,
   },
-
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 60,
     right: 24,
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 10,
   },
-
   closeButtonText: {
     fontSize: 20,
-    color: '#131313',
-    fontWeight: 'bold',
+    color: "#131313",
+    fontWeight: "bold",
   },
-
   title: {
     fontSize: 28,
-    fontWeight: '700',
-    color: '#131313',
+    fontWeight: "700",
+    color: "#131313",
     marginBottom: 24,
   },
-
   groupsList: {
     flex: 1,
-    gap: 12,
+    marginBottom: 16,
   },
-
   emptyText: {
     fontSize: 14,
-    color: '#444',
+    color: "#444",
   },
-
   groupItem: {
     padding: 16,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
+    borderColor: "rgba(255, 255, 255, 0.6)",
+    marginBottom: 12,
   },
-
+  groupItemActive: {
+    backgroundColor: "rgba(99, 102, 241, 0.2)",
+    borderColor: "#6366F1",
+  },
   groupText: {
     fontSize: 16,
-    color: '#131313',
-    fontWeight: '600',
+    color: "#131313",
+    fontWeight: "600",
   },
-
+  groupMood: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
+  },
   actionsContainer: {
     gap: 12,
     marginBottom: 16,
   },
-
   groupButton: {
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(120, 120, 128, 0.16)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(120, 120, 128, 0.16)",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
-
   groupButtonText: {
-    color: '#131313',
-    fontWeight: '600',
+    color: "#131313",
+    fontWeight: "600",
     fontSize: 16,
   },
-
   profileButton: {
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(83, 212, 216, 0.35)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(83, 212, 216, 0.35)",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
-
   profileButtonText: {
-    color: '#131313',
-    fontWeight: '700',
+    color: "#131313",
+    fontWeight: "700",
     fontSize: 16,
   },
 });
