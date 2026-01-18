@@ -113,13 +113,28 @@ export default function GroupHomeScreen() {
     };
   }, [group?.id]);
 
-  // Boost updates when tasks change, capped at 100 ahead of decay
+  // Initialize decay based on group creation time
   useEffect(() => {
-    const completedCount = allTasks.length;
-    const newBoost = completedCount * 20;
-    const cappedBoost = Math.min(newBoost, trackedDecay + 100);
-    setTrackedBoost(cappedBoost);
-  }, [allTasks, trackedDecay]);
+    if (!group?.created_at) return;
+
+    const secondsElapsed =
+      (Date.now() - new Date(group.created_at).getTime()) / 1000;
+    const initialDecay = Math.floor(secondsElapsed / 5) * 10; // 5 seconds = 5000ms
+    const initialBoost = allTasks.length * 20;
+
+    // Cap them relative to each other
+    if (initialDecay > initialBoost + 100) {
+      setTrackedDecay(initialBoost + 100);
+    } else {
+      setTrackedDecay(initialDecay);
+    }
+
+    if (initialBoost > initialDecay + 100) {
+      setTrackedBoost(initialDecay + 100);
+    } else {
+      setTrackedBoost(initialBoost);
+    }
+  }, [group?.created_at, allTasks.length]);
 
   // Calculate mood from tracked values
   useEffect(() => {
