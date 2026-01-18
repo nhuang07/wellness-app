@@ -26,7 +26,7 @@ export default function Index() {
       if (group) {
         // User has a group → go to your main app screen
         // tabs-index.tsx is at app/tabs-index.tsx → route "/tabs-index"
-        router.replace("/tabs-index");
+        router.replace("/home");
       } else {
         // User has no group yet → go to connect page
         // make sure you have app/connect-page.tsx or app/connect-page/index.tsx

@@ -3,6 +3,7 @@ import GroupInfoButton from "@/components/GroupInfoButton";
 import MenuDrawer from "@/components/MenuDrawer";
 import TaskCard from "@/components/TaskCard";
 import { useEffect, useRef, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
 
 import { generateTasksForUser } from "@/lib/gemini";
 import {
@@ -43,6 +44,8 @@ const NWNeutral = require("@/assets/images/NWneutral.png");
 const NWSad = require("@/assets/images/NWsad.png");
 
 export default function GroupHomeScreen() {
+  const params = useLocalSearchParams();
+  const passedGroupId = params.groupId as string | undefined;
   const [tasks, setTasks] = useState<any[]>([]);
   const [allTasks, setAllTasks] = useState<any[]>([]);
   const [group, setGroup] = useState<any>(null);
@@ -566,12 +569,21 @@ export default function GroupHomeScreen() {
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => setMenuOpen(true)}
-              style={styles.menuButton}
-            >
-              <Text style={styles.menuButtonText}>☰</Text>
-            </TouchableOpacity>
+            <View style={styles.headerLeft}>
+              <TouchableOpacity
+                onPress={() => router.push("/home")}
+                style={styles.homeButton}
+              >
+                <Text style={styles.homeButtonText}>🏠</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={() => setMenuOpen(true)}
+                style={styles.menuButton}
+              >
+                <Text style={styles.menuButtonText}>☰</Text>
+              </TouchableOpacity>
+            </View>
 
             <Text style={styles.headerTitle}>{group?.name || "My Pet"}</Text>
 
@@ -585,7 +597,6 @@ export default function GroupHomeScreen() {
                 const groups = userGroups
                   .map((g: any) => g.groups)
                   .filter(Boolean);
-
                 if (groups.length > 0) {
                   // Switch to first remaining group
                   setGroup(groups[0]);
@@ -599,6 +610,7 @@ export default function GroupHomeScreen() {
               }}
             />
           </View>
+
 
           {/* Mascot */}
           <View style={styles.mascotContainer}>
@@ -1264,5 +1276,21 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 2,
     borderColor: "#fff",
+  },
+  headerLeft: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 8,
+  },
+  homeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  homeButtonText: {
+    fontSize: 20,
   },
 });
