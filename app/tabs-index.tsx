@@ -17,10 +17,9 @@ import {
   subscribeToGroupMembers,
   subscribeToGroupTasks,
   supabase,
-  updateGroupMood,
 } from "@/lib/supabase";
 import { router } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -70,9 +69,6 @@ export default function GroupHomeScreen() {
   // Pet mood
   const [petMood, setPetMood] = useState<number>(100);
 
-  const groups = ["Study Buddies", "Fitness Friends", "Project Team"];
-  const petIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   useEffect(() => {
     loadData();
   }, []);
@@ -100,25 +96,51 @@ export default function GroupHomeScreen() {
     };
   }, [group?.id]);
 
-  // Pet mood decay every 10 seconds
   useEffect(() => {
-    startPetMoodDecay();
-    return () => clearInterval(petIntervalRef.current!);
-  }, []);
+    if (!group?.created_at) return;
 
+    const interval = setInterval(() => {
+      const completedCount = tasks.filter((t) => t.completed).length;
+      const mood = calculateMood(group, completedCount);
+      setPetMood(mood);
+    }, 1000); // Update display every second
+
+    return () => clearInterval(interval);
+  }, [group, tasks]);
+
+  /*
   const startPetMoodDecay = () => {
     if (petIntervalRef.current) clearInterval(petIntervalRef.current);
-    petIntervalRef.current = setInterval(async () => {
+    petIntervalRef.current = setInterval(() => {
       setPetMood((prev) => {
         const newMood = Math.max(prev - 10, 0);
-        if (group?.id) {
-          updateGroupMood(group.id, newMood);
-        }
         return newMood;
       });
     }, 10000);
   };
+  */
 
+  const calculateMood = (group: any, tasksCompletedToday: number) => {
+    if (!group?.created_at) return 100;
+
+    /*
+    const hoursElapsed =
+      (Date.now() - new Date(group.created_at).getTime()) / (1000 * 60 * 60);
+
+    // Lose 5 mood per hour, gain 10 per task completed
+    const decay = Math.floor(hoursElapsed) * 5;
+    const boost = tasksCompletedToday * 10;
+    */
+
+    const secondsElapsed =
+      (Date.now() - new Date(group.created_at).getTime()) / 1000;
+
+    // Lose 10 mood per 15 seconds, gain 20 per task completed
+    const decay = Math.floor(secondsElapsed / 15) * 10;
+    const boost = tasksCompletedToday * 20;
+
+    return Math.max(0, Math.min(100, 100 - decay + boost));
+  };
   const loadAllGroups = async (uid?: string) => {
     const currentUserId = uid || userId;
     if (!currentUserId) return;
@@ -189,7 +211,9 @@ export default function GroupHomeScreen() {
       setGroup(myGroup);
 
       if (myGroup) {
-        setPetMood(myGroup.creature_mood ?? 100);
+        const completedToday = tasks.filter((t) => t.completed).length; // adjust this query
+        const mood = calculateMood(myGroup, completedToday);
+        setPetMood(mood);
         await loadTasks(user.id, (myGroup as any).id);
         await loadMembers((myGroup as any).id);
       } else {
@@ -292,14 +316,6 @@ export default function GroupHomeScreen() {
   // Task completion increases mood
   const handleTaskComplete = async () => {
     await loadTasks();
-    const newMood = Math.min(petMood + 20, 100);
-    setPetMood(newMood);
-
-    if (group?.id) {
-      await updateGroupMood(group.id, newMood);
-    }
-
-    startPetMoodDecay();
   };
 
   const openMemberProfile = async (member: any) => {
