@@ -1,31 +1,32 @@
 // app/group-home.tsx
+import GroupInfoButton from "@/components/GroupInfoButton";
 import MenuDrawer from "@/components/MenuDrawer";
 import TaskCard from "@/components/TaskCard";
 
 import { generateTasksForUser } from "@/lib/gemini";
 import {
-  getCompletedGroupTasks,
-  getGroupMembers,
-  getMyGroup,
-  getMyTasks,
-  getProfile,
-  subscribeToGroupMembers,
-  subscribeToGroupTasks,
-  supabase,
+    getCompletedGroupTasks,
+    getGroupMembers,
+    getMyGroup,
+    getMyTasks,
+    getProfile,
+    subscribeToGroupMembers,
+    subscribeToGroupTasks,
+    supabase,
 } from "@/lib/supabase";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Image,
-  ImageBackground,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Image,
+    ImageBackground,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const NWHappy = require("@/assets/images/NWhappy.png");
@@ -383,16 +384,24 @@ export default function GroupHomeScreen() {
         </Modal>
 
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-          {/* Header */}
-          <View style={styles.header}>
+        {/* Header */}
+            <View style={styles.header}>
             <TouchableOpacity
-              onPress={() => setMenuOpen(true)}
-              style={styles.menuButton}
+                onPress={() => setMenuOpen(true)}
+                style={styles.menuButton}
             >
-              <Text style={styles.menuButtonText}>☰</Text>
+                <Text style={styles.menuButtonText}>☰</Text>
             </TouchableOpacity>
+
             <Text style={styles.headerTitle}>{group?.name || "My Pet"}</Text>
-          </View>
+
+            <GroupInfoButton
+                inviteCode={group?.invite_code || "------"}
+                groupTasks={tasks}
+                myTasks={tasks}
+            />
+            </View>
+
 
           {/* Mascot Image */}
           <View style={styles.mascotContainer}>
@@ -550,10 +559,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 16,
-  },
+},
+
   menuButton: {
     width: 40,
     height: 40,
