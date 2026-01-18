@@ -41,6 +41,10 @@ export default function GroupHomeScreen() {
 
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [generatedTasks, setGeneratedTasks] = useState<string[]>([]);
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+  const [showTaskSelection, setShowTaskSelection] = useState(false);
+  const [customTask, setCustomTask] = useState("");
 
   // Tab for my tasks vs all tasks
   const [activeTab, setActiveTab] = useState<"mine" | "all">("mine");
@@ -122,9 +126,31 @@ export default function GroupHomeScreen() {
 
     setGenerating(true);
     try {
-      const generatedTasks = await generateTasksForUser(prompt);
+      const tasks = await generateTasksForUser(prompt);
+      setGeneratedTasks(tasks);
+      setSelectedTasks(tasks); // Select all by default
+      setShowTaskSelection(true);
+      setPrompt("");
+    } catch (error) {
+      console.log("Error generating tasks:", error);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
-      const tasksToInsert = generatedTasks.map((description: string) => ({
+  const toggleTaskSelection = (task: string) => {
+    if (selectedTasks.includes(task)) {
+      setSelectedTasks(selectedTasks.filter((t) => t !== task));
+    } else {
+      setSelectedTasks([...selectedTasks, task]);
+    }
+  };
+
+  const confirmSelectedTasks = async () => {
+    if (selectedTasks.length === 0) return;
+
+    try {
+      const tasksToInsert = selectedTasks.map((description) => ({
         group_id: group.id,
         user_id: userId,
         description,
@@ -135,11 +161,30 @@ export default function GroupHomeScreen() {
       if (error) throw error;
 
       await loadTasks();
-      setPrompt("");
+      setShowTaskSelection(false);
+      setGeneratedTasks([]);
+      setSelectedTasks([]);
     } catch (error) {
-      console.log("Error generating tasks:", error);
-    } finally {
-      setGenerating(false);
+      console.log("Error saving tasks:", error);
+    }
+  };
+
+  const addCustomTask = async () => {
+    if (!customTask.trim() || !userId || !group) return;
+
+    try {
+      const { error } = await supabase.from("tasks").insert({
+        group_id: group.id,
+        user_id: userId,
+        description: customTask.trim(),
+        completed: false,
+      });
+
+      if (error) throw error;
+      await loadTasks();
+      setCustomTask("");
+    } catch (error) {
+      console.log("Error adding custom task:", error);
     }
   };
 
@@ -265,6 +310,59 @@ export default function GroupHomeScreen() {
                   </View>
                 </>
               )}
+            </View>
+          </View>
+        </Modal>
+
+        {/* Task Selection Modal */}
+        <Modal
+          visible={showTaskSelection}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowTaskSelection(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.taskSelectionModal}>
+              <Text style={styles.modalTitle}>Select Your Tasks</Text>
+              <Text style={styles.modalSubtitle}>Tap to select/deselect</Text>
+
+              {generatedTasks.map((task, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.selectableTask,
+                    selectedTasks.includes(task) &&
+                      styles.selectableTaskSelected,
+                  ]}
+                  onPress={() => toggleTaskSelection(task)}
+                >
+                  <View style={styles.checkbox}>
+                    {selectedTasks.includes(task) && <Text>✓</Text>}
+                  </View>
+                  <Text style={styles.selectableTaskText}>{task}</Text>
+                </TouchableOpacity>
+              ))}
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => {
+                    setShowTaskSelection(false);
+                    setGeneratedTasks([]);
+                    setSelectedTasks([]);
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.confirmButton}
+                  onPress={confirmSelectedTasks}
+                >
+                  <Text style={styles.confirmButtonText}>
+                    Add {selectedTasks.length} Tasks
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -400,6 +498,24 @@ export default function GroupHomeScreen() {
               </TouchableOpacity>
             </View>
           )}
+
+          {/* Custom Task Input */}
+          <View style={styles.customTaskContainer}>
+            <TextInput
+              value={customTask}
+              onChangeText={setCustomTask}
+              placeholder="Add your own task..."
+              placeholderTextColor="rgba(19, 19, 19, 0.5)"
+              style={styles.customTaskInput}
+            />
+            <TouchableOpacity
+              onPress={addCustomTask}
+              style={styles.addCustomButton}
+              disabled={!customTask.trim()}
+            >
+              <Text style={styles.addCustomButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Task List */}
           <View style={styles.todoContainer}>
@@ -677,6 +793,111 @@ const styles = StyleSheet.create({
   },
   generateMoreButtonText: {
     color: "#fff",
+    fontWeight: "600",
+  },
+  taskSelectionModal: {
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    padding: 24,
+    width: "90%",
+    maxHeight: "80%",
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#131313",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  selectableTask: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  selectableTaskSelected: {
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    borderColor: "#6366F1",
+  },
+  selectableTaskText: {
+    flex: 1,
+    fontSize: 16,
+    color: "#131313",
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#6366F1",
+    marginRight: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 20,
+  },
+  cancelButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: "#f5f5f5",
+  },
+  cancelButtonText: {
+    textAlign: "center",
+    fontWeight: "600",
+    color: "#666",
+  },
+  confirmButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: "#6366F1",
+  },
+  confirmButtonText: {
+    textAlign: "center",
+    fontWeight: "600",
+    color: "#fff",
+  },
+  customTaskContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    gap: 8,
+  },
+  customTaskInput: {
+    flex: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: "#131313",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.4)",
+  },
+  addCustomButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#10B981",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  addCustomButtonText: {
+    color: "#fff",
+    fontSize: 24,
     fontWeight: "600",
   },
 });

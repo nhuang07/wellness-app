@@ -144,10 +144,18 @@ export const getCompletedGroupTasks = async (groupId: string) => {
   return data;
 };
 
-export const completeTask = async (taskId: string, completed: boolean) => {
+export const completeTask = async (
+  taskId: string,
+  completed: boolean,
+  photoUrl?: string,
+) => {
   const { error } = await supabase
     .from("tasks")
-    .update({ completed })
+    .update({
+      completed,
+      photo_url: photoUrl,
+      completed_at: completed ? new Date().toISOString() : null,
+    })
     .eq("id", taskId);
   if (error) throw error;
 };

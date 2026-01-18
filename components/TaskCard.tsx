@@ -15,11 +15,21 @@ interface TaskCardProps {
     description: string;
     completed: boolean;
     photo_url?: string;
+    completed_at?: string;
   };
   onComplete: () => void;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
 }
 
-export default function TaskCard({ task, onComplete }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  onComplete,
+  selectable,
+  selected,
+  onSelect,
+}: TaskCardProps) {
   const [uploading, setUploading] = useState(false);
 
   const handleCompleteWithPhoto = async () => {
@@ -32,7 +42,11 @@ export default function TaskCard({ task, onComplete }: TaskCardProps) {
 
       const { error } = await supabase
         .from("tasks")
-        .update({ completed: true, photo_url: photoUrl })
+        .update({
+          completed: true,
+          photo_url: photoUrl,
+          completed_at: new Date().toISOString(),
+        })
         .eq("id", task.id);
 
       if (error) throw error;
@@ -43,6 +57,29 @@ export default function TaskCard({ task, onComplete }: TaskCardProps) {
       setUploading(false);
     }
   };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  // Selectable mode (for choosing AI tasks)
+  if (selectable) {
+    return (
+      <TouchableOpacity
+        style={[styles.card, selected && styles.cardSelected]}
+        onPress={onSelect}
+      >
+        <View style={styles.checkbox}>{selected && <Text>✓</Text>}</View>
+        <Text style={styles.description}>{task.description}</Text>
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <View style={[styles.card, task.completed && styles.cardCompleted]}>
@@ -55,6 +92,12 @@ export default function TaskCard({ task, onComplete }: TaskCardProps) {
         >
           {task.description}
         </Text>
+
+        {task.completed && task.completed_at && (
+          <Text style={styles.completedDate}>
+            Completed {formatDate(task.completed_at)}
+          </Text>
+        )}
 
         {task.completed && task.photo_url && (
           <Image source={{ uri: task.photo_url }} style={styles.proofPhoto} />
@@ -99,6 +142,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(16, 185, 129, 0.2)",
     borderColor: "rgba(16, 185, 129, 0.5)",
   },
+  cardSelected: {
+    backgroundColor: "rgba(99, 102, 241, 0.2)",
+    borderColor: "#6366F1",
+  },
   content: {
     flex: 1,
   },
@@ -109,6 +156,11 @@ const styles = StyleSheet.create({
   descriptionCompleted: {
     textDecorationLine: "line-through",
     opacity: 0.7,
+  },
+  completedDate: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
   },
   proofPhoto: {
     width: 200,
@@ -128,5 +180,15 @@ const styles = StyleSheet.create({
   },
   checkmark: {
     marginLeft: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#6366F1",
+    marginRight: 12,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
