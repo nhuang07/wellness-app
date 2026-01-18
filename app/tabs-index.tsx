@@ -5,29 +5,32 @@ import TaskCard from "@/components/TaskCard";
 
 import { generateTasksForUser } from "@/lib/gemini";
 import {
-    getCompletedGroupTasks,
-    getGroupMembers,
-    getMyGroup,
-    getMyGroups,
-    getMyTasks,
-    getProfile,
-    subscribeToGroupMembers,
-    subscribeToGroupTasks,
-    supabase,
+  canNudgeUser,
+  getCompletedGroupTasks,
+  getGroupMembers,
+  getMyGroup,
+  getMyGroups,
+  getMyTasks,
+  getProfile,
+  sendNudge,
+  subscribeToGroupMembers,
+  subscribeToGroupTasks,
+  supabase,
 } from "@/lib/supabase";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    ImageBackground,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ImageBackground,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 // Pet images
@@ -52,6 +55,7 @@ export default function GroupHomeScreen() {
   const [customTask, setCustomTask] = useState("");
   const [allGroups, setAllGroups] = useState<any[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(false);
+  const [nudgeLoading, setNudgeLoading] = useState(false);
 
   // Tab for my tasks vs all tasks
   const [activeTab, setActiveTab] = useState<"mine" | "all">("mine");
@@ -65,7 +69,6 @@ export default function GroupHomeScreen() {
 
   const groups = ["Study Buddies", "Fitness Friends", "Project Team"];
   const petIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
 
   useEffect(() => {
     loadData();
@@ -91,16 +94,16 @@ export default function GroupHomeScreen() {
 
   // Pet mood decay every 10 seconds
   useEffect(() => {
-  startPetMoodDecay();
-  return () => clearInterval(petIntervalRef.current!);
-}, []);
+    startPetMoodDecay();
+    return () => clearInterval(petIntervalRef.current!);
+  }, []);
 
-const startPetMoodDecay = () => {
-  if (petIntervalRef.current) clearInterval(petIntervalRef.current);
-  petIntervalRef.current = setInterval(() => {
-    setPetMood((prev) => Math.max(prev - 10, 0));
-  }, 10000);
-};
+  const startPetMoodDecay = () => {
+    if (petIntervalRef.current) clearInterval(petIntervalRef.current);
+    petIntervalRef.current = setInterval(() => {
+      setPetMood((prev) => Math.max(prev - 10, 0));
+    }, 10000);
+  };
 
   const loadAllGroups = async (uid?: string) => {
     const currentUserId = uid || userId;
@@ -115,6 +118,34 @@ const startPetMoodDecay = () => {
       console.log("Error loading groups:", error);
     } finally {
       setGroupsLoading(false);
+    }
+  };
+
+  const handleNudge = async () => {
+    if (!userId || !selectedMember?.user_id || !group?.id) return;
+
+    setNudgeLoading(true);
+    try {
+      const { canNudge, secondsLeft } = await canNudgeUser(
+        userId,
+        selectedMember.user_id,
+        group.id,
+      );
+
+      if (!canNudge) {
+        Alert.alert("Cooldown", `Wait ${secondsLeft}s before nudging again`);
+        return;
+      }
+
+      await sendNudge(userId, selectedMember.user_id, group.id);
+      Alert.alert(
+        "Nudged! 👉",
+        `You nudged ${selectedMember.fullProfile?.username || "them"}!`,
+      );
+    } catch (error: any) {
+      Alert.alert("Error", error.message);
+    } finally {
+      setNudgeLoading(false);
     }
   };
 
@@ -244,10 +275,10 @@ const startPetMoodDecay = () => {
 
   // Task completion increases mood
   const handleTaskComplete = async () => {
-  await loadTasks();
-  setPetMood((prev) => Math.min(prev + 20, 100));
-  startPetMoodDecay(); // <-- resets the 10-second timer
-};
+    await loadTasks();
+    setPetMood((prev) => Math.min(prev + 20, 100));
+    startPetMoodDecay(); // <-- resets the 10-second timer
+  };
 
   const openMemberProfile = async (member: any) => {
     try {
@@ -267,8 +298,8 @@ const startPetMoodDecay = () => {
   };
 
   const getCreatureImage = () => {
-    if (petMood > 50) return  NWHappy;
-    if (petMood > 10) return  NWNeutral;
+    if (petMood > 50) return NWHappy;
+    if (petMood > 10) return NWNeutral;
     return NWSad;
   };
 
@@ -359,6 +390,18 @@ const startPetMoodDecay = () => {
                       <Text style={styles.statLabel}>All Time</Text>
                     </View>
                   </View>
+                  {selectedMember?.user_id !== userId && (
+                    <TouchableOpacity
+                      style={styles.nudgeButton}
+                      onPress={handleNudge}
+                      disabled={nudgeLoading}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.nudgeButtonText}>
+                        {nudgeLoading ? "Nudging..." : "👉 Nudge"}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </>
               )}
             </View>
