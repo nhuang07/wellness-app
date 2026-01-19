@@ -30,7 +30,7 @@ More animations, richer bear personality, stronger group interactions, and expan
 
 ## Screenshots
 
-<img src="assets/images/Untitled design.jpg" width="300">
-<img src="assets/images/Untitled design1.jpg" width="300">
-<img src="assets/images/Untitled design2.jpg" width="300">
+<img src="assets/images/Untitled design.jpg" width="450">
+<img src="assets/images/Untitled design-2.jpg" width="450">
+<img src="assets/images/Untitled design-3.jpg" width="450">
 
