@@ -28,4 +28,4 @@ First mobile app for our team, fully functional + cohesive design, and a charact
 ## What’s Next
 More animations, richer bear personality, stronger group interactions, and expanded community use.
 
-![Untitled design](assets/images/Untitled design.jpg)
+![image1](assets/images/Untitled%20design.jpg)
